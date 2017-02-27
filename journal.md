@@ -24,3 +24,6 @@ einbinden.
 - [Lucid](https://github.com/chrisdone/lucid) für das HTML Templating
 - [Bootstrap](https://getbootstrap.com/getting-started/) für das Frontend
 - Einfaches Templating über `Layout.layout` erstellt
+
+## Layout übernehmen
+Das Layout vom aktuellen Blog mittels CSS und `Layout.layout` übernommen

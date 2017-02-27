@@ -19,6 +19,7 @@ import Lucid (Html, renderText)
 import qualified Lucid.Html5 as H
 
 import Layout (layout)
+import Views.AboutMe
 
 data MySession = EmptySession
 data MyAppState = DummyAppState (IORef Int)
@@ -36,7 +37,9 @@ app = do
   -- serve static files from local static folder
   middleware serveStatic
   
-  get root $ renderHtml (layout "Hallo Welt" "Hey dude")
+  get root $ renderHtml (layout "Funktionale Programmierung und mehr..." "Hey dude")
+
+  get "aboutMe" $ renderHtml Views.AboutMe.page
        
   get ("hello" <//> var) $ \name -> do
     DummyAppState ref <- getState
@@ -50,4 +53,3 @@ serveStatic = staticPolicy (addBase "./static")
 
 renderHtml :: MonadIO m => Html a -> ActionCtxT ctx m a
 renderHtml = html . TL.toStrict . renderText
-
