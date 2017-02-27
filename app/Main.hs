@@ -18,7 +18,7 @@ import qualified Data.Text as T
 import Lucid (Html, renderText)
 import qualified Lucid.Html5 as H
 
-import Layout (layout)
+import Layout (layout, Page(..))
 import Views.AboutMe
 
 data MySession = EmptySession
@@ -37,7 +37,7 @@ app = do
   -- serve static files from local static folder
   middleware serveStatic
   
-  get root $ renderHtml (layout "Funktionale Programmierung und mehr..." "Hey dude")
+  get root $ renderHtml (layout "Funktionale Programmierung und mehr..." Main "Hey dude")
 
   get "aboutMe" $ renderHtml Views.AboutMe.page
        

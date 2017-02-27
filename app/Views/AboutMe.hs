@@ -10,11 +10,10 @@ import Lucid (Html, toHtml)
 import qualified Lucid.Html5 as H
 import qualified Lucid.Bootstrap as BS
 
-import Layout (layout)
-
+import Layout (layout, Page(AboutMe))
 
 page :: Html ()
-page = layout "Über mich" content
+page = layout "Über mich" AboutMe content
 
 
 content :: Html ()

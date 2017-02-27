@@ -1,18 +1,32 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Layout
-  ( layout
+  ( Page(..)
+  , layout
   ) where
 
 import Data.Text (Text)
 import qualified Data.Text as T
 
-import Lucid (Html, toHtml)
+import Lucid (Html, Attribute, toHtml)
 import qualified Lucid.Html5 as H
 import qualified Lucid.Bootstrap as BS
 
+import Control.Monad (forM_)
 
-layout :: Text -> Html () -> Html ()
-layout title content = do
+
+data Page
+  = Main
+  | AboutMe
+  deriving Eq
+
+
+instance Show Page where
+  show Main = "Blog"
+  show AboutMe = "Über mich"
+
+
+layout :: Text -> Page -> Html () -> Html ()
+layout title activePage content = do
   H.doctype_ 
   H.html_ [ H.lang_ "de" ] $ do
     H.head_ $ do
@@ -39,10 +53,7 @@ layout title content = do
     H.body_ $ do
 
       H.div_ [ H.class_ "blog-masthead" ] $ do
-        BS.container_ $ do
-          H.nav_ [ H.class_ "blog-nav" ] $ do
-            H.a_ [ H.class_ "blog-nav-item active", H.href_ "/" ] "Blog"
-            H.a_ [ H.class_ "blog-nav-item", H.href_ "/aboutMe" ] "über mich"
+        BS.container_ $ nav activePage
       
       BS.container_ $ do
         H.div_ [ H.id_ "main", H.role_ "main" ] content
@@ -64,6 +75,25 @@ layout title content = do
         [ H.src_ "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML" ]
         T.empty
 
+
+href :: Page -> Attribute
+href Main = H.href_ "/"
+href AboutMe = H.href_ "/aboutMe"
+
+
+nav :: Page -> Html ()
+nav active = do
+  H.nav_ [ H.class_ "blog-nav" ] $ do
+     forM_ [ Main, AboutMe ] $ navItem active
+
+
+navItem :: Page -> Page -> Html ()
+navItem active item
+  | active == item =
+    H.a_ [ H.class_ "blog-nav-item active", href item] (toHtml $ show item)
+  | otherwise =
+    H.a_ [ H.class_ "blog-nav-item", href item ] (toHtml $ show item)
+    
 
 jumbotron_ :: Html a -> Html a
 jumbotron_ = H.div_ [ H.class_ "jumbotron" ]
