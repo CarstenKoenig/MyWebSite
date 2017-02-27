@@ -16,3 +16,11 @@ können (leichte Übertragung von Bilddateien etc.)
 - benutzt *LTS-8.3*
 - git Verzeichnis angelegt
 - github
+
+## Scaffolding: Middelware(static) / Bootstrap / Lucid
+- Statische Inhalte in `./static` über 
+[wai-middleware-static](https://hackage.haskell.org/package/wai-middleware-static-0.8.1/docs/Network-Wai-Middleware-Static.html)
+einbinden.
+- [Lucid](https://github.com/chrisdone/lucid) für das HTML Templating
+- [Bootstrap](https://getbootstrap.com/getting-started/) für das Frontend
+- Einfaches Templating über `Layout.layout` erstellt

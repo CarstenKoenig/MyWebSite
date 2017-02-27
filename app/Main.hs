@@ -51,6 +51,3 @@ serveStatic = staticPolicy (addBase "./static")
 renderHtml :: MonadIO m => Html a -> ActionCtxT ctx m a
 renderHtml = html . TL.toStrict . renderText
 
-helloTemplate :: Html ()
-helloTemplate = do
-  H.h3_ "Hello Lucid"
