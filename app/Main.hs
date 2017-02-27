@@ -18,6 +18,7 @@ import qualified Data.Text as T
 import Lucid (Html, renderText)
 import qualified Lucid.Html5 as H
 
+import Layout (layout)
 
 data MySession = EmptySession
 data MyAppState = DummyAppState (IORef Int)
@@ -35,7 +36,7 @@ app = do
   -- serve static files from local static folder
   middleware serveStatic
   
-  get root $ renderHtml helloTemplate
+  get root $ renderHtml (layout "Hallo Welt" "Hey dude")
        
   get ("hello" <//> var) $ \name -> do
     DummyAppState ref <- getState
