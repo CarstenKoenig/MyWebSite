@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Layout
   ( Page(..)
+  , LayoutConfig (..)
   , layout
   ) where
 
 
+import Data.Default
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -27,8 +29,17 @@ instance Show Page where
   show AboutMe = "Über mich"
 
 
-layout :: Maybe Text -> Text -> Page -> Html () -> Html ()
-layout additionalStyles title activePage content = do
+data LayoutConfig =
+  LayoutConfig { additionalStyles :: Maybe Text
+               , activePage :: Page }
+
+
+instance Default LayoutConfig where
+  def = LayoutConfig Nothing Main
+
+
+layout :: LayoutConfig -> Text -> Html () -> Html ()
+layout config title content = do
   H.doctype_ 
   H.html_ [ H.lang_ "de" ] $ do
     H.head_ $ do
@@ -52,12 +63,12 @@ layout additionalStyles title activePage content = do
       H.link_ [ H.href_ "css/site.css"
               , H.rel_ "stylesheet" ]
 
-      H.style_ $ fromMaybe "" additionalStyles
+      H.style_ $ fromMaybe "" $ additionalStyles config
         
     H.body_ $ do
 
       H.div_ [ H.class_ "blog-masthead" ] $ do
-        BS.container_ $ nav activePage
+        BS.container_ $ nav $ activePage config
       
       BS.container_ $ do
         H.div_ [ H.id_ "main", H.role_ "main" ] content

@@ -28,15 +28,15 @@ import Skylighting ( TokenizerConfig(..), SourceLine)
 import qualified Skylighting as Sky       
 
 
-import Layout (Page(Main), layout)
+import Layout (Page(Main), LayoutConfig (..), layout)
 import Models.BlogPost (BlogPost (..))
 
 
 page :: TimeZone -> BlogPost -> Html ()
 page timeZone post =
-  layout (Just cssStyles) (title post) Main $
+  layout config (title post) $
   pageContent timeZone post
-
+  where config = def { additionalStyles = Just cssStyles }
 
 pageContent :: TimeZone -> BlogPost -> Html ()
 pageContent timeZone post = do

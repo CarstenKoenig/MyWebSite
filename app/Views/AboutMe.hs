@@ -3,6 +3,7 @@ module Views.AboutMe
   ( page
   ) where
 
+import Data.Default (def)
 import Data.Text (Text)
 import qualified Data.Text as T
 
@@ -13,7 +14,7 @@ import qualified Lucid.Bootstrap as BS
 import Layout (layout, Page(AboutMe))
 
 page :: Html ()
-page = layout Nothing "Über mich" AboutMe content
+page = layout def "Über mich" content
 
 
 content :: Html ()
