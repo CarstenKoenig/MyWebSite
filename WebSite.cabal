@@ -33,4 +33,4 @@ executable WebSite
                      , wai-middleware-static >= 0.8.1
                      , lucid >= 2.9.7
                      , markdown >= 0.1.14
-                     , highlighting-kate >= 0.6.3
+                     , skylighting >= 0.1.1.5

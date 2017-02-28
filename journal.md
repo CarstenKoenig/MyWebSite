@@ -33,3 +33,5 @@ Das Layout vom aktuellen Blog mittels CSS und `Layout.layout` übernommen
 
 ## Blog Post rendern
 - Rendering zunächst über `highlighting-kate`
+- Portiert auf [`skylighting`](https://www.stackage.org/lts-8.3/package/skylighting-0.1.1.5)
+(offizieller Nachfolger von `highlighting-kate`)

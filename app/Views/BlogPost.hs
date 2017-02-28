@@ -6,6 +6,7 @@ module Views.BlogPost
   ) where
 
 import Data.Default (def)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Time (UTCTime, toGregorian)
 import Data.Time.LocalTime (TimeZone, TimeOfDay (..), utcToLocalTime, localTimeOfDay, localDay)
@@ -18,9 +19,10 @@ import qualified Lucid.Bootstrap as BS
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Text.Markdown (markdown, Markdown(..), MarkdownSettings(..))
-import Text.Highlighting.Kate
-       ( formatHtmlBlock, defaultFormatOpts
-       , highlightAs, styleToCss, pygments)
+import Skylighting
+       ( TokenizerConfig(..), SourceLine
+       , formatHtmlBlock, defaultFormatOpts
+       , styleToCss, pygments, tokenize, syntaxByName, defaultSyntaxMap)
 import Text.Blaze (preEscapedText, preEscapedToMarkup)
 import qualified Text.Blaze.Html as TBH
 import Text.Blaze.Html.Renderer.Text (renderHtml)
@@ -76,8 +78,8 @@ renderBlogPost blogPost =
 renderLang :: Maybe Text -> Text -> TBH.Html
 renderLang lang src =
   formatHtmlBlock defaultFormatOpts
-  $ highlightAs (maybe "haskell" T.unpack lang)
-  $ T.unpack src
+  $ highlightAs (fromMaybe "haskell" lang)
+  $ src
 
 
 renderFrame :: Text -> TBH.Html
@@ -97,3 +99,16 @@ renderMath src =
 
 cssStyles :: Text
 cssStyles = T.pack $ styleToCss pygments
+
+
+highlightAs :: Text -> Text -> [SourceLine]
+highlightAs lang source =
+  case syntaxByName defaultSyntaxMap lang of
+    Nothing -> []
+    Just syntax ->
+      case tokenize config syntax source of
+        Left _ -> []
+        Right lines -> lines
+  where
+    config = TokenizerConfig defaultSyntaxMap False
+  
