@@ -8,35 +8,28 @@ module Views.BlogPost
 import Data.Default (def)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+import Text.Blaze (preEscapedText, preEscapedToMarkup)
+import qualified Text.Blaze.Html as TBH
+import Text.Blaze.Html.Renderer.Text (renderHtml)
+import Text.Markdown (Markdown(..), MarkdownSettings(..), markdown)
+import Text.Printf
 import Data.Time (UTCTime, toGregorian)
-import Data.Time.LocalTime (TimeZone, TimeOfDay (..), utcToLocalTime, localTimeOfDay, localDay)
+import Data.Time.LocalTime (TimeZone, TimeOfDay (..)
+                           , utcToLocalTime, localTimeOfDay, localDay)
 
 
 import Lucid (Html, toHtml, toHtmlRaw)
 import qualified Lucid.Html5 as H
 import qualified Lucid.Bootstrap as BS
 
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-import Text.Markdown (markdown, Markdown(..), MarkdownSettings(..))
-import Skylighting
-       ( TokenizerConfig(..), SourceLine
-       , formatHtmlBlock, defaultFormatOpts
-       , styleToCss, pygments, tokenize, syntaxByName, defaultSyntaxMap)
-import Text.Blaze (preEscapedText, preEscapedToMarkup)
-import qualified Text.Blaze.Html as TBH
-import Text.Blaze.Html.Renderer.Text (renderHtml)
-import Text.Printf
+import Skylighting ( TokenizerConfig(..), SourceLine)
+import qualified Skylighting as Sky       
 
 
-import Layout (layout, Page(Main))
-
-
-data BlogPost =
-  BlogPost { content :: Markdown
-           , title :: Text
-           , publishedTime :: UTCTime
-           }
+import Layout (Page(Main), layout)
+import Models.BlogPost (BlogPost (..))
 
 
 page :: TimeZone -> BlogPost -> Html ()
@@ -77,7 +70,7 @@ renderBlogPost blogPost =
 
 renderLang :: Maybe Text -> Text -> TBH.Html
 renderLang lang src =
-  formatHtmlBlock defaultFormatOpts
+  Sky.formatHtmlBlock Sky.defaultFormatOpts
   $ highlightAs (fromMaybe "haskell" lang)
   $ src
 
@@ -98,17 +91,17 @@ renderMath src =
 
 
 cssStyles :: Text
-cssStyles = T.pack $ styleToCss pygments
+cssStyles = T.pack $ Sky.styleToCss Sky.pygments
 
 
 highlightAs :: Text -> Text -> [SourceLine]
 highlightAs lang source =
-  case syntaxByName defaultSyntaxMap lang of
+  case Sky.syntaxByName Sky.defaultSyntaxMap lang of
     Nothing -> []
     Just syntax ->
-      case tokenize config syntax source of
+      case Sky.tokenize config syntax source of
         Left _ -> []
         Right lines -> lines
   where
-    config = TokenizerConfig defaultSyntaxMap False
+    config = TokenizerConfig Sky.defaultSyntaxMap False
   

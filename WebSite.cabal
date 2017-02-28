@@ -17,6 +17,7 @@ executable WebSite
   hs-source-dirs:      app
   main-is:             Main.hs
   other-modules:       Layout
+                     , Models.BlogPost
                      , Views.AboutMe
                      , Views.BlogPost
   default-language:    Haskell2010
