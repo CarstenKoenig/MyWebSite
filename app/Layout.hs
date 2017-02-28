@@ -4,6 +4,8 @@ module Layout
   , layout
   ) where
 
+
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 
@@ -25,8 +27,8 @@ instance Show Page where
   show AboutMe = "Über mich"
 
 
-layout :: Text -> Page -> Html () -> Html ()
-layout title activePage content = do
+layout :: Maybe Text -> Text -> Page -> Html () -> Html ()
+layout additionalStyles title activePage content = do
   H.doctype_ 
   H.html_ [ H.lang_ "de" ] $ do
     H.head_ $ do
@@ -49,6 +51,8 @@ layout title activePage content = do
       -- Custom css
       H.link_ [ H.href_ "css/site.css"
               , H.rel_ "stylesheet" ]
+
+      H.style_ $ fromMaybe "" additionalStyles
         
     H.body_ $ do
 

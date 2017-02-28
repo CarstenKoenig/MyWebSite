@@ -14,12 +14,15 @@ import Data.IORef
 
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text as T
+import Data.Time ( getCurrentTime )
+import Data.Time.LocalTime (getCurrentTimeZone)
 
 import Lucid (Html, renderText)
 import qualified Lucid.Html5 as H
 
 import Layout (layout, Page(..))
 import Views.AboutMe
+import Views.BlogPost
 
 data MySession = EmptySession
 data MyAppState = DummyAppState (IORef Int)
@@ -36,8 +39,11 @@ app :: SpockM () MySession MyAppState ()
 app = do
   -- serve static files from local static folder
   middleware serveStatic
+
+  timeZone <- liftIO getCurrentTimeZone
+  ex <- liftIO example
   
-  get root $ renderHtml (layout "Funktionale Programmierung und mehr..." Main "Hey dude")
+  get root $ renderHtml $ Views.BlogPost.page timeZone ex
 
   get "aboutMe" $ renderHtml Views.AboutMe.page
        
@@ -45,6 +51,15 @@ app = do
     DummyAppState ref <- getState
     visitorNumber <- liftIO $ atomicModifyIORef' ref $ \i -> (i+1, i+1)
     text ("Hello " <> name <> ", you are visitor number " <> T.pack (show visitorNumber))
+
+
+example :: IO BlogPost
+example = do
+  time <- getCurrentTime
+  return $
+    BlogPost
+    "#Hey you\n`what is up`?\n\n```haskell\nf :: Int -> Bool\nf 0 = True\nf _ = False\n```"
+    "Testblogpost" time
 
 
 serveStatic :: Middleware

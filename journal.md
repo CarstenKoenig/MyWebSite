@@ -27,3 +27,9 @@ einbinden.
 
 ## Layout übernehmen
 Das Layout vom aktuellen Blog mittels CSS und `Layout.layout` übernommen
+
+
+# 28. Februar 2017
+
+## Blog Post rendern
+- Rendering zunächst über `highlighting-kate`

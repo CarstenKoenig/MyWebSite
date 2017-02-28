@@ -12,10 +12,10 @@ body {
   font-family: Georgia, "Times New Roman", Times, serif;
   color: #555;
   background: #FFF;
+  margin-top: 100px;
 }
 
 #main #aboutMe {
-  margin-top: 100px;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -119,6 +119,25 @@ h6, .h6 {
 
 .blog-description {
   font-size: 20px;
+  color: #999;
+}
+
+.blog-main {
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.blog-post {
+  margin-bottom: 60px;
+}
+
+.blog-post-title {
+  margin-bottom: 5px;
+  font-size: 40px;
+}
+
+.blog-post-meta {
+  margin-bottom: 20px;
   color: #999;
 }
 

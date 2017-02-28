@@ -18,12 +18,19 @@ executable WebSite
   main-is:             Main.hs
   other-modules:       Layout
                      , Views.AboutMe
+                     , Views.BlogPost
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
+                     , data-default
                      , Spock >= 0.11
                      , mtl
                      , text
+                     , time
                      , wai
                      , warp
+                     , blaze-markup
+                     , blaze-html
                      , wai-middleware-static >= 0.8.1
                      , lucid >= 2.9.7
+                     , markdown >= 0.1.14
+                     , highlighting-kate >= 0.6.3

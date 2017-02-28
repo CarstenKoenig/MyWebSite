@@ -13,7 +13,7 @@ import qualified Lucid.Bootstrap as BS
 import Layout (layout, Page(AboutMe))
 
 page :: Html ()
-page = layout "Über mich" AboutMe content
+page = layout Nothing "Über mich" AboutMe content
 
 
 content :: Html ()
