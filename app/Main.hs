@@ -9,13 +9,17 @@ import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
 
 import Control.Monad.Trans
+import Data.Maybe (fromMaybe)
 import Data.Monoid
 import Data.IORef
 
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import Data.Time ( getCurrentTime )
 import Data.Time.LocalTime (getCurrentTimeZone)
+
+import Network.HTTP.Types (urlDecode)
 
 import Lucid (Html, renderText)
 import qualified Lucid.Html5 as H
@@ -23,21 +27,22 @@ import qualified Lucid.Html5 as H
 import Layout (layout, Page(..))
 import Views.AboutMe
 import Views.BlogPost
+import Views.Login
 
+import Utils.Password (Password(..), PasswordHash)
 import qualified Utils.Password as Pwd
 import Session
 
 main :: IO ()
 main = do
-  adminHash <- Pwd.readPasswordHashFromFile "admin.pwd"
-  
   ref <- newIORef 0
+  adminHash <- liftIO $ Pwd.readPasswordHashFromFile "admin.pwd"
   spockCfg <- defaultSpockCfg emptySession PCNoDatabase (DummyAppState ref)
-  runSpock 8080 (spock spockCfg app)
+  runSpock 8080 (spock spockCfg $ app adminHash)
 
 
-app :: SpockM () SiteSession SiteState ()
-app = do
+app :: PasswordHash -> SpockM () SiteSession SiteState ()
+app adminHash = do
   -- serve static files from local static folder
   middleware serveStatic
 
@@ -47,8 +52,15 @@ app = do
   get root $ renderHtml $ Views.BlogPost.page timeZone ex
 
   get "aboutMe" $ renderHtml Views.AboutMe.page
-       
-  get "login" $ text "login..."
+
+  getpost "logout" $ logout
+    
+  get "login" $ renderHtml $ Views.Login.page
+  post "login" $ do
+    pwd <- fromMaybe "" <$> param "pwd"
+    adminLogon adminHash $ Password pwd
+    
+  
   get "admin" $ requireAdmin $ text "hi Admin"
 
   get ("hello" <//> var) $ \name -> do

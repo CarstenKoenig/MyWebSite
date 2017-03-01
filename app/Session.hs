@@ -31,12 +31,19 @@ emptySession = SiteSession Guest
 
 
 adminLogon :: PasswordHash -> Password -> SiteAction ctx ()
-adminLogon hash pwd = modifySession $
-  \ session ->
-      if Pwd.verifyPassword hash pwd then
-        session { logon = Admin }
-      else
-        session { logon = Guest }
+adminLogon hash pwd =
+  if Pwd.verifyPassword hash pwd then do
+    modifySession $  \ session -> session { logon = Admin }
+    redirect "/admin"
+  else do
+    modifySession $  \ session -> session { logon = Guest }
+    redirect "/login"
+
+
+logout ::  SiteAction ctx ()
+logout = do
+    modifySession $  \ session -> session { logon = Guest }
+    redirect "/"
 
 
 requireAdmin :: SiteAction ctx a -> SiteAction ctx a
