@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, RankNTypes #-}
 module Main where
 
 import Web.Spock
@@ -24,18 +24,19 @@ import Layout (layout, Page(..))
 import Views.AboutMe
 import Views.BlogPost
 
-data MySession = EmptySession
-data MyAppState = DummyAppState (IORef Int)
-
+import qualified Utils.Password as Pwd
+import Session
 
 main :: IO ()
-main =
-    do ref <- newIORef 0
-       spockCfg <- defaultSpockCfg EmptySession PCNoDatabase (DummyAppState ref)
-       runSpock 8080 (spock spockCfg app)
+main = do
+  adminHash <- Pwd.readPasswordHashFromFile "admin.pwd"
+  
+  ref <- newIORef 0
+  spockCfg <- defaultSpockCfg emptySession PCNoDatabase (DummyAppState ref)
+  runSpock 8080 (spock spockCfg app)
 
 
-app :: SpockM () MySession MyAppState ()
+app :: SpockM () SiteSession SiteState ()
 app = do
   -- serve static files from local static folder
   middleware serveStatic
@@ -47,6 +48,9 @@ app = do
 
   get "aboutMe" $ renderHtml Views.AboutMe.page
        
+  get "login" $ text "login..."
+  get "admin" $ requireAdmin $ text "hi Admin"
+
   get ("hello" <//> var) $ \name -> do
     DummyAppState ref <- getState
     visitorNumber <- liftIO $ atomicModifyIORef' ref $ \i -> (i+1, i+1)

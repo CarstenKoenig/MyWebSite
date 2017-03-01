@@ -37,3 +37,12 @@ Das Layout vom aktuellen Blog mittels CSS und `Layout.layout` übernommen
 (offizieller Nachfolger von `highlighting-kate`)
 - `BlogPost` in eigenes Modul
 - Layout über `LayoutConfig` konfigurierbar
+
+# 01. März 2017
+
+## Auth
+Für den Moment reicht es, wenn ein Administrator über ein Passwort authentifiziert wird.
+
+- Utilities erstellt um Password-Hashes zu schreiben
+- Hash für Logon auslesen
+- Sessions, State, Logon-Handling in Session-Module ausgelagert

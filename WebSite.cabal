@@ -17,6 +17,8 @@ executable WebSite
   hs-source-dirs:      app
   main-is:             Main.hs
   other-modules:       Layout
+                     , Session
+                     , Utils.Password
                      , Models.BlogPost
                      , Views.AboutMe
                      , Views.BlogPost
@@ -35,3 +37,5 @@ executable WebSite
                      , lucid >= 2.9.7
                      , markdown >= 0.1.14
                      , skylighting >= 0.1.1.5
+                     , cryptohash >= 0.11.9
+                     , bytestring >= 0.10.8
