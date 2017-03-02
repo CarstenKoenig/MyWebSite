@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, RankNTypes #-}
+{-# LANGUAGE OverloadedStrings, RankNTypes, DataKinds #-}
 module Main where
 
 import Web.Spock
@@ -20,6 +20,7 @@ import Data.Time ( getCurrentTime )
 import Data.Time.LocalTime (getCurrentTimeZone)
 
 import Network.HTTP.Types (urlDecode)
+import Web.Routing.Combinators (PathState(..))
 
 import Lucid (Html, renderText)
 import qualified Lucid.Html5 as H
@@ -31,7 +32,10 @@ import Views.Login
 
 import Utils.Password (Password(..), PasswordHash)
 import qualified Utils.Password as Pwd
+
 import Session
+import Routes
+
 
 main :: IO ()
 main = do
@@ -51,17 +55,17 @@ app adminHash = do
   
   get root $ renderHtml $ Views.BlogPost.page timeZone ex
 
-  get "aboutMe" $ renderHtml Views.AboutMe.page
+  get aboutMeR $ renderHtml Views.AboutMe.page
 
-  getpost "logout" $ logout
+  getpost logoutR logout
     
-  get "login" $ renderHtml $ Views.Login.page
-  post "login" $ do
+  get loginR $ renderHtml Views.Login.page
+  post loginR $ do
     pwd <- fromMaybe "" <$> param "pwd"
     adminLogon adminHash $ Password pwd
     
   
-  get "admin" $ requireAdmin $ text "hi Admin"
+  get adminR $ requireAdmin $ text "hi Admin"
 
   get ("hello" <//> var) $ \name -> do
     DummyAppState ref <- getState

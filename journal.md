@@ -50,3 +50,12 @@ Für den Moment reicht es, wenn ein Administrator über ein Passwort authentifiz
 ## Spock
 - **Parameter** aus dem Body werden mit `param name` oder `params` ausgelesen (nicht dokumentiert!)
 - **URL-Decodierung** am Besten mit `Network.HTTP.Types (urlDecode)
+
+
+# 02. März 2017
+
+## Routen
+Die Routen für die Applikation sollen statisch werden und Links entsprechend Typ-Sicher
+gerendert werden (siehe [Spock: type-safe-routing](https://www.spock.li/2015/04/19/type-safe_routing.html))
+
+- Routen in `Routes.hs` definiert

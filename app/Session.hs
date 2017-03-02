@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, RankNTypes #-}
+{-# LANGUAGE OverloadedStrings, TypeFamilies, RankNTypes #-}
 module Session where
 
 import Web.Spock
@@ -10,6 +10,7 @@ import Data.IORef
 import Utils.Password (PasswordHash, Password(..))
 import qualified Utils.Password as Pwd
 
+import Routes
 
 type SiteAction ctx a = SpockActionCtx ctx () SiteSession SiteState a
 
@@ -34,10 +35,10 @@ adminLogon :: PasswordHash -> Password -> SiteAction ctx ()
 adminLogon hash pwd =
   if Pwd.verifyPassword hash pwd then do
     modifySession $  \ session -> session { logon = Admin }
-    redirect "/admin"
+    redirect $ renderRoute adminR
   else do
     modifySession $  \ session -> session { logon = Guest }
-    redirect "/login"
+    redirect $ renderRoute loginR
 
 
 logout ::  SiteAction ctx ()
@@ -50,5 +51,7 @@ requireAdmin :: SiteAction ctx a -> SiteAction ctx a
 requireAdmin action =
    do sess <- readSession
       case logon sess of
-         Guest -> redirect "/login"
+         Guest -> redirect $ renderRoute loginR
          Admin -> action
+
+
