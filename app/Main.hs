@@ -8,6 +8,7 @@ import Network.Wai (Middleware, Application)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
 
+import Control.Monad
 import Control.Monad.Trans
 import Data.Maybe (fromMaybe)
 import Data.Monoid
@@ -25,7 +26,7 @@ import Web.Routing.Combinators (PathState(..))
 import Lucid (Html, renderText)
 import qualified Lucid.Html5 as H
 
-import Layout (layout, Page(..))
+import Layout (layout)
 import Views.AboutMe
 import Views.BlogPost
 import Views.Login
@@ -86,5 +87,5 @@ serveStatic :: Middleware
 serveStatic = staticPolicy (addBase "./static")
 
 
-renderHtml :: MonadIO m => Html a -> ActionCtxT ctx m a
-renderHtml = html . TL.toStrict . renderText
+renderHtml :: MonadIO m => ActionCtxT ctx m (Html a) -> ActionCtxT ctx m a
+renderHtml = fmap (TL.toStrict . renderText) >=> html

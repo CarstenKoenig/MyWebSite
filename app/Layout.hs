@@ -1,15 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Layout
-  ( Page(..)
-  , LayoutConfig (..)
+  ( LayoutConfig (..)
   , layout
   ) where
 
+import Web.Spock
 
 import Data.Default
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
+
+import Control.Monad.IO.Class (MonadIO)
 
 import Lucid (Html, Attribute, toHtml)
 import qualified Lucid.Html5 as H
@@ -17,29 +19,21 @@ import qualified Lucid.Bootstrap as BS
 
 import Control.Monad (forM_)
 
-
-data Page
-  = Main
-  | AboutMe
-  deriving Eq
-
-
-instance Show Page where
-  show Main = "Blog"
-  show AboutMe = "Über mich"
+import Routes
 
 
 data LayoutConfig =
-  LayoutConfig { additionalStyles :: Maybe Text
-               , activePage :: Page }
+  LayoutConfig { additionalStyles :: Maybe Text }
 
 
 instance Default LayoutConfig where
-  def = LayoutConfig Nothing Main
+  def = LayoutConfig Nothing
 
 
-layout :: LayoutConfig -> Text -> Html () -> Html ()
+layout :: MonadIO m => LayoutConfig -> Text -> Html () -> ActionCtxT ctx m (Html ())
 layout config title content = do
+  activePage <- requestRoute
+  return $ do
   H.doctype_ 
   H.html_ [ H.lang_ "de" ] $ do
     H.head_ $ do
@@ -68,7 +62,7 @@ layout config title content = do
     H.body_ $ do
 
       H.div_ [ H.class_ "blog-masthead" ] $ do
-        BS.container_ $ nav $ activePage config
+        BS.container_ $ nav activePage
       
       BS.container_ $ do
         H.div_ [ H.id_ "main", H.role_ "main" ] content
@@ -91,18 +85,17 @@ layout config title content = do
         T.empty
 
 
-href :: Page -> Attribute
-href Main = H.href_ "/"
-href AboutMe = H.href_ "/aboutMe"
+href :: Route -> Attribute
+href route = H.href_ $ routeLinkText route
 
 
-nav :: Page -> Html ()
+nav :: Route -> Html ()
 nav active = do
   H.nav_ [ H.class_ "blog-nav" ] $ do
-     forM_ [ Main, AboutMe ] $ navItem active
+     forM_ [ Home, AboutMe ] $ navItem active
 
 
-navItem :: Page -> Page -> Html ()
+navItem :: Route -> Route -> Html ()
 navItem active item
   | active == item =
     H.a_ [ H.class_ "blog-nav-item active", href item] (toHtml $ show item)

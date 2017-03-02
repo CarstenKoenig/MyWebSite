@@ -5,6 +5,9 @@ module Views.BlogPost
   , page
   ) where
 
+import Web.Spock
+import Control.Monad.IO.Class (MonadIO)
+
 import Data.Default (def)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
@@ -28,11 +31,10 @@ import Skylighting ( TokenizerConfig(..), SourceLine)
 import qualified Skylighting as Sky       
 
 
-import Layout (Page(Main), LayoutConfig (..), layout)
+import Layout (LayoutConfig (..), layout)
 import Models.BlogPost (BlogPost (..))
 
-
-page :: TimeZone -> BlogPost -> Html ()
+page :: MonadIO m => TimeZone -> BlogPost -> ActionCtxT ctx m (Html ())
 page timeZone post =
   layout config (title post) $
   pageContent timeZone post

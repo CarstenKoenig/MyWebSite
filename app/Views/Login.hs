@@ -5,6 +5,7 @@ module Views.Login
   ) where
 
 import Web.Spock
+import Control.Monad.IO.Class (MonadIO)
 
 import Data.Default (def)
 import Data.Maybe (fromMaybe)
@@ -16,10 +17,10 @@ import Lucid (Html, toHtml, toHtmlRaw)
 import qualified Lucid.Html5 as H
 import qualified Lucid.Bootstrap as BS
 
-import Layout (Page(Main), LayoutConfig (..), layout)
+import Layout (LayoutConfig (..), layout)
 import Routes
 
-page :: Html ()
+page :: MonadIO m => ActionCtxT ctx m (Html ())
 page =
   layout def "Login" $
   pageContent

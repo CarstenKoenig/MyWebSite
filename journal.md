@@ -59,3 +59,5 @@ Die Routen für die Applikation sollen statisch werden und Links entsprechend Ty
 gerendert werden (siehe [Spock: type-safe-routing](https://www.spock.li/2015/04/19/type-safe_routing.html))
 
 - Routen in `Routes.hs` definiert
+- Route über `Request` bestimmen - d.h. die Route soll nicht über die Session
+gespeichert werden!
