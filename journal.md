@@ -61,3 +61,7 @@ gerendert werden (siehe [Spock: type-safe-routing](https://www.spock.li/2015/04/
 - Routen in `Routes.hs` definiert
 - Route über `Request` bestimmen - d.h. die Route soll nicht über die Session
 gespeichert werden!
+
+## Layout refaktoriert
+die `layout` Funktion bekommt ihre Argumente jetzt aus einem `Page` Record, der
+von den einzelnen *Views* bereitgestellt wird

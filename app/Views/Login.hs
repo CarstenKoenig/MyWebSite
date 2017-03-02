@@ -17,13 +17,12 @@ import Lucid (Html, toHtml, toHtmlRaw)
 import qualified Lucid.Html5 as H
 import qualified Lucid.Bootstrap as BS
 
-import Layout (LayoutConfig (..), layout)
+import Layout (Page(Page))
 import Routes
 
-page :: MonadIO m => ActionCtxT ctx m (Html ())
-page =
-  layout def "Login" $
-  pageContent
+
+page :: Page
+page = Page Nothing "Login" pageContent
 
 
 pageContent :: Html ()

@@ -31,14 +31,14 @@ import Skylighting ( TokenizerConfig(..), SourceLine)
 import qualified Skylighting as Sky       
 
 
-import Layout (LayoutConfig (..), layout)
+import Layout (Page (Page))
 import Models.BlogPost (BlogPost (..))
 
-page :: MonadIO m => TimeZone -> BlogPost -> ActionCtxT ctx m (Html ())
-page timeZone post =
-  layout config (title post) $
-  pageContent timeZone post
-  where config = def { additionalStyles = Just cssStyles }
+
+page :: TimeZone -> BlogPost -> Page
+page timezone post =
+  Page (Just cssStyles) (title post) $ pageContent timezone post
+
 
 pageContent :: TimeZone -> BlogPost -> Html ()
 pageContent timeZone post = do

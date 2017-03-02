@@ -23,10 +23,10 @@ import Data.Time.LocalTime (getCurrentTimeZone)
 import Network.HTTP.Types (urlDecode)
 import Web.Routing.Combinators (PathState(..))
 
-import Lucid (Html, renderText)
+import Lucid (Html)
 import qualified Lucid.Html5 as H
 
-import Layout (layout)
+import Layout (Page, renderPage)
 import Views.AboutMe
 import Views.BlogPost
 import Views.Login
@@ -54,13 +54,13 @@ app adminHash = do
   timeZone <- liftIO getCurrentTimeZone
   ex <- liftIO example
   
-  get root $ renderHtml $ Views.BlogPost.page timeZone ex
+  get root $ renderPage $ Views.BlogPost.page timeZone ex
 
-  get aboutMeR $ renderHtml Views.AboutMe.page
+  get aboutMeR $ renderPage Views.AboutMe.page
 
   getpost logoutR logout
     
-  get loginR $ renderHtml Views.Login.page
+  get loginR $ renderPage Views.Login.page
   post loginR $ do
     pwd <- fromMaybe "" <$> param "pwd"
     adminLogon adminHash $ Password pwd
@@ -85,7 +85,3 @@ example = do
 
 serveStatic :: Middleware
 serveStatic = staticPolicy (addBase "./static")
-
-
-renderHtml :: MonadIO m => ActionCtxT ctx m (Html a) -> ActionCtxT ctx m a
-renderHtml = fmap (TL.toStrict . renderText) >=> html
