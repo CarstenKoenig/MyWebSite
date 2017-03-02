@@ -50,3 +50,10 @@ Für den Moment reicht es, wenn ein Administrator über ein Passwort authentifiz
 ## Spock
 - **Parameter** aus dem Body werden mit `param name` oder `params` ausgelesen (nicht dokumentiert!)
 - **URL-Decodierung** am Besten mit `Network.HTTP.Types (urlDecode)
+
+## FlyCheck hlint
+in Emacs mit
+
+    (flycheck-add-next-checker 'intero '(warning . haskell-hlint))
+	
+aktiviert (offensichtlich muss mit `stack install hlint` installiert werden)	

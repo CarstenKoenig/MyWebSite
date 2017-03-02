@@ -53,9 +53,9 @@ app adminHash = do
 
   get "aboutMe" $ renderHtml Views.AboutMe.page
 
-  getpost "logout" $ logout
+  getpost "logout" logout
     
-  get "login" $ renderHtml $ Views.Login.page
+  get "login" $ renderHtml Views.Login.page
   post "login" $ do
     pwd <- fromMaybe "" <$> param "pwd"
     adminLogon adminHash $ Password pwd
