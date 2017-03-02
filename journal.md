@@ -57,3 +57,17 @@ in Emacs mit
     (flycheck-add-next-checker 'intero '(warning . haskell-hlint))
 	
 aktiviert (offensichtlich muss mit `stack install hlint` installiert werden)	
+
+# 02. März 2017
+
+## Routen
+Die Routen für die Applikation sollen statisch werden und Links entsprechend Typ-Sicher
+gerendert werden (siehe [Spock: type-safe-routing](https://www.spock.li/2015/04/19/type-safe_routing.html))
+
+- Routen in `Routes.hs` definiert
+- Route über `Request` bestimmen - d.h. die Route soll nicht über die Session
+gespeichert werden!
+
+## Layout refaktoriert
+die `layout` Funktion bekommt ihre Argumente jetzt aus einem `Page` Record, der
+von den einzelnen *Views* bereitgestellt wird

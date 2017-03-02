@@ -37,6 +37,7 @@ executable WebSite
                      , blaze-html
                      , wai-middleware-static >= 0.8.1
                      , lucid >= 2.9.7
+                     , reroute >= 0.4.0.1
                      , markdown >= 0.1.14
                      , skylighting >= 0.1.1.5
                      , cryptohash >= 0.11.9

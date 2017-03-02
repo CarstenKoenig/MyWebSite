@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, RankNTypes #-}
+{-# LANGUAGE OverloadedStrings, RankNTypes, DataKinds #-}
 module Main where
 
 import Web.Spock
@@ -8,6 +8,7 @@ import Network.Wai (Middleware, Application)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
 
+import Control.Monad
 import Control.Monad.Trans
 import Data.Maybe (fromMaybe)
 import Data.Monoid
@@ -20,18 +21,22 @@ import Data.Time ( getCurrentTime )
 import Data.Time.LocalTime (getCurrentTimeZone)
 
 import Network.HTTP.Types (urlDecode)
+import Web.Routing.Combinators (PathState(..))
 
-import Lucid (Html, renderText)
+import Lucid (Html)
 import qualified Lucid.Html5 as H
 
-import Layout (layout, Page(..))
+import Layout (Page, renderPage)
 import Views.AboutMe
 import Views.BlogPost
 import Views.Login
 
 import Utils.Password (Password(..), PasswordHash)
 import qualified Utils.Password as Pwd
+
 import Session
+import Routes
+
 
 main :: IO ()
 main = do
@@ -49,19 +54,19 @@ app adminHash = do
   timeZone <- liftIO getCurrentTimeZone
   ex <- liftIO example
   
-  get root $ renderHtml $ Views.BlogPost.page timeZone ex
+  get root $ renderPage $ Views.BlogPost.page timeZone ex
 
-  get "aboutMe" $ renderHtml Views.AboutMe.page
+  get aboutMeR $ renderPage Views.AboutMe.page
 
-  getpost "logout" logout
+  getpost logoutR logout
     
-  get "login" $ renderHtml Views.Login.page
-  post "login" $ do
+  get loginR $ renderPage Views.Login.page
+  post loginR $ do
     pwd <- fromMaybe "" <$> param "pwd"
     adminLogon adminHash $ Password pwd
     
   
-  get "admin" $ requireAdmin $ text "hi Admin"
+  get adminR $ requireAdmin $ text "hi Admin"
 
   get ("hello" <//> var) $ \name -> do
     DummyAppState ref <- getState
@@ -80,7 +85,3 @@ example = do
 
 serveStatic :: Middleware
 serveStatic = staticPolicy (addBase "./static")
-
-
-renderHtml :: MonadIO m => Html a -> ActionCtxT ctx m a
-renderHtml = html . TL.toStrict . renderText

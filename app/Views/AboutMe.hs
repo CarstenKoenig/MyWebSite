@@ -3,18 +3,24 @@ module Views.AboutMe
   ( page
   ) where
 
+import Web.Spock
+
 import Data.Default (def)
 import Data.Text (Text)
 import qualified Data.Text as T
+
+import Control.Monad.IO.Class (MonadIO)
 
 import Lucid (Html, toHtml)
 import qualified Lucid.Html5 as H
 import qualified Lucid.Bootstrap as BS
 
-import Layout (layout, Page(AboutMe))
+import Layout (Page (Page))
+import Routes
 
-page :: Html ()
-page = layout def "Über mich" content
+
+page :: Page
+page = Page Nothing "Über mich" content
 
 
 content :: Html ()
@@ -53,6 +59,7 @@ content = do
 
 col_ :: Int -> Html a -> Html a
 col_ n = H.div_ [ H.class_ . T.pack $ "col-md-" ++ show n ]
+
 
 jumbotron_ :: Html a -> Html a
 jumbotron_ = H.div_ [ H.class_ "jumbotron" ]

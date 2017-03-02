@@ -1,45 +1,44 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Layout
-  ( Page(..)
-  , LayoutConfig (..)
-  , layout
+  ( Page (..)
+  , renderPage
   ) where
 
+import Web.Spock
 
 import Data.Default
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
 
-import Lucid (Html, Attribute, toHtml)
+import Control.Monad
+import Control.Monad.IO.Class (MonadIO)
+
+import Lucid (Html, Attribute, toHtml, renderText)
 import qualified Lucid.Html5 as H
 import qualified Lucid.Bootstrap as BS
 
 import Control.Monad (forM_)
 
-
-data Page
-  = Main
-  | AboutMe
-  deriving Eq
+import Routes
 
 
-instance Show Page where
-  show Main = "Blog"
-  show AboutMe = "Über mich"
+data Page =
+  Page { additionalStyles :: Maybe Text
+       , title :: Text
+       , content :: Html ()
+       }
 
 
-data LayoutConfig =
-  LayoutConfig { additionalStyles :: Maybe Text
-               , activePage :: Page }
+renderPage :: MonadIO m => Page -> ActionCtxT ctx m a
+renderPage = layout >=> (html . TL.toStrict . renderText)
 
 
-instance Default LayoutConfig where
-  def = LayoutConfig Nothing Main
-
-
-layout :: LayoutConfig -> Text -> Html () -> Html ()
-layout config title content = do
+layout :: MonadIO m => Page -> ActionCtxT ctx m (Html ())
+layout page = do
+  activePage <- requestRoute
+  return $ do
   H.doctype_ 
   H.html_ [ H.lang_ "de" ] $ do
     H.head_ $ do
@@ -54,7 +53,7 @@ layout config title content = do
       H.meta_ [ H.name_ "viewport"
               , H.content_ "width=device-width, initial-scale=1" ]
         
-      H.title_ $ toHtml title
+      H.title_ $ toHtml $ title page
       
       -- Bootstrap
       H.link_ [ H.href_ "css/bootstrap.min.css"
@@ -63,15 +62,15 @@ layout config title content = do
       H.link_ [ H.href_ "css/site.css"
               , H.rel_ "stylesheet" ]
 
-      H.style_ $ fromMaybe "" $ additionalStyles config
+      H.style_ $ fromMaybe "" $ additionalStyles page
         
     H.body_ $ do
 
       H.div_ [ H.class_ "blog-masthead" ] $ do
-        BS.container_ $ nav $ activePage config
+        BS.container_ $ nav activePage
       
       BS.container_ $ do
-        H.div_ [ H.id_ "main", H.role_ "main" ] content
+        H.div_ [ H.id_ "main", H.role_ "main" ] $ content page
 
       H.footer_ [ H.class_ "blog-footer" ] $ do
         H.div_ [ H.class_ "col-md-2 text-left" ] $ do
@@ -91,18 +90,17 @@ layout config title content = do
         T.empty
 
 
-href :: Page -> Attribute
-href Main = H.href_ "/"
-href AboutMe = H.href_ "/aboutMe"
+href :: Route -> Attribute
+href route = H.href_ $ routeLinkText route
 
 
-nav :: Page -> Html ()
+nav :: Route -> Html ()
 nav active = do
   H.nav_ [ H.class_ "blog-nav" ] $ do
-     forM_ [ Main, AboutMe ] $ navItem active
+     forM_ [ Home, AboutMe ] $ navItem active
 
 
-navItem :: Page -> Page -> Html ()
+navItem :: Route -> Route -> Html ()
 navItem active item
   | active == item =
     H.a_ [ H.class_ "blog-nav-item active", href item] (toHtml $ show item)
