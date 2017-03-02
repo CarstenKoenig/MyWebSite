@@ -17,6 +17,7 @@ executable WebSite
   hs-source-dirs:      app
   main-is:             Main.hs
   other-modules:       Layout
+                     , Routes
                      , Session
                      , Utils.Password
                      , Models.BlogPost
