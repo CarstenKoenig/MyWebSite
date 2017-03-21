@@ -10,21 +10,25 @@ import Data.IORef
 import Utils.Password (PasswordHash, Password(..))
 import qualified Utils.Password as Pwd
 
-import Routes
+import Database.Persist.Postgresql (SqlBackend)
 
-type SiteAction ctx a = SpockActionCtx ctx () SiteSession SiteState a
+import Routes
+import Config
+
+type SiteApp = SpockM SqlBackend SiteSession SiteState ()
+type SiteAction ctx a = SpockActionCtx ctx SqlBackend SiteSession SiteState a
 
 newtype SiteSession =
   SiteSession { logon :: LogonStatus }
+
+data SiteState =
+  SiteState { appConfig :: AppConfig }
 
 
 data LogonStatus
   = Guest
   | Admin
   deriving (Eq, Show)
-
-
-newtype SiteState = DummyAppState (IORef Int)
 
 
 emptySession :: SiteSession

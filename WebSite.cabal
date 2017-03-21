@@ -18,10 +18,12 @@ executable WebSite
   main-is:             Main.hs
   other-modules:       Layout
                      , Routes
+                     , Config
                      , Session
                      , Routes
                      , Utils.Password
                      , Models.BlogPost
+                     , Models.Database
                      , Views.AboutMe
                      , Views.BlogPost
                      , Views.Login
@@ -47,4 +49,6 @@ executable WebSite
                      , persistent
                      , persistent-postgresql >= 2.6 && < 2.7
                      , persistent-template
+                     , monad-logger
+                     , resource-pool
                      

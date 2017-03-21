@@ -10,6 +10,7 @@ import Network.Wai.Middleware.Static (staticPolicy, addBase)
 
 import Control.Monad
 import Control.Monad.Trans
+import Control.Monad.Logger (runNoLoggingT)
 import Data.Maybe (fromMaybe)
 import Data.Monoid
 import Data.IORef
@@ -23,6 +24,8 @@ import Data.Time.LocalTime (getCurrentTimeZone)
 import Network.HTTP.Types (urlDecode)
 import Web.Routing.Combinators (PathState(..))
 
+import Database.Persist.Postgresql (SqlBackend, createPostgresqlPool)
+
 import Lucid (Html)
 import qualified Lucid.Html5 as H
 
@@ -31,22 +34,26 @@ import Views.AboutMe
 import Views.BlogPost
 import Views.Login
 
+import qualified Models.Database as DB
+
 import Utils.Password (Password(..), PasswordHash)
 import qualified Utils.Password as Pwd
 
+import Config
 import Session
 import Routes
 
 
 main :: IO ()
 main = do
-  ref <- newIORef 0
+  let cfg = defaultAppConfig
+  pool <- DB.initializePool cfg
   adminHash <- liftIO $ Pwd.readPasswordHashFromFile "admin.pwd"
-  spockCfg <- defaultSpockCfg emptySession PCNoDatabase (DummyAppState ref)
+  spockCfg <- defaultSpockCfg emptySession (PCPool pool) (SiteState cfg)
   runSpock 8080 (spock spockCfg $ app adminHash)
 
 
-app :: PasswordHash -> SpockM () SiteSession SiteState ()
+app :: PasswordHash -> SiteApp
 app adminHash = do
   -- serve static files from local static folder
   middleware serveStatic
@@ -67,11 +74,6 @@ app adminHash = do
     
   
   get adminR $ requireAdmin $ text "hi Admin"
-
-  get ("hello" <//> var) $ \name -> do
-    DummyAppState ref <- getState
-    visitorNumber <- liftIO $ atomicModifyIORef' ref $ \i -> (i+1, i+1)
-    text ("Hello " <> name <> ", you are visitor number " <> T.pack (show visitorNumber))
 
 
 example :: IO BlogPost

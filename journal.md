@@ -71,3 +71,11 @@ gespeichert werden!
 ## Layout refaktoriert
 die `layout` Funktion bekommt ihre Argumente jetzt aus einem `Page` Record, der
 von den einzelnen *Views* bereitgestellt wird
+
+# 21. März 2017
+Damit begonnen das Postgres-Datenbank-Backend über `persistent` aufzusetzen.
+
+Die Datenbank ist im Moment fest (siehe `Config.hs`) angelegt.
+
+Einziges Problem war, den `SpockM` Typ richtig zuzordnen (der erste Parameter
+ist das **Backend** und ist hier `SqlBackend`) und den SQL-Pool aufzusetzen.
