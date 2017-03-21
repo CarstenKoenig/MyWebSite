@@ -53,4 +53,5 @@ executable WebSite
                      , monad-logger
                      , resource-pool
                      , hvect
+                     , resourcet
                      

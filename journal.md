@@ -84,3 +84,10 @@ ist das **Backend** und ist hier `SqlBackend`) und den SQL-Pool aufzusetzen.
 Die Technik von [hier](https://www.spock.li/2015/08/23/taking_authentication_to_the_next_level.html)
 verwendet um Aktionen (`SiteAdminAction`) die einen Adminzugang voraussetzen
 typsicher zu verwenden
+
+## Blogpost einfügen / laden
+in `Database.hs` implementiert
+
+## TODO
+- *edit* / *insert*
+- Login mit redirect zur alten URL

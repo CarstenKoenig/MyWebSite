@@ -29,6 +29,9 @@ loginR = "login"
 adminR :: Path '[] Open
 adminR = "admin"
 
+showPostR :: Path '[BlogId] Open
+showPostR = var
+
 editPostR :: Path '[BlogId] Open
 editPostR = "edit" <//> var
 
@@ -37,6 +40,7 @@ data Route
   = Home
   | AboutMe
   | Login
+  | Show BlogId
   | Edit BlogId
   deriving Eq
 
@@ -49,11 +53,13 @@ instance Show Route where
   show AboutMe = "Über mich"
   show Login = "Logon"
   show (Edit _) = "Eintrag editieren"
+  show (Show _) = "Eintrag ansehen"
 
 
 routeLinkText :: Route -> Text
 routeLinkText Home = renderRoute "/"
 routeLinkText AboutMe = renderRoute aboutMeR
 routeLinkText Login = renderRoute loginR
+routeLinkText (Show id) = renderRoute showPostR id
 routeLinkText (Edit id) = renderRoute editPostR id
 

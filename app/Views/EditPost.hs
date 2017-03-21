@@ -32,11 +32,11 @@ pageContent id = do
             , H.action_ $ renderRoute editPostR id
             , H.method_ "post"  ] $ do
       H.div_ [ H.class_ "form-group" ] $ do
-        H.label_ [ H.for_ "titel" ] "Titel"
+        H.label_ [ H.for_ "title" ] "Titel"
         H.input_ [ H.type_ "text"
                  , H.class_ "form-control"
-                 , H.id_ "titel"
-                 , H.name_ "titel"
+                 , H.id_ "title"
+                 , H.name_ "title"
                  , H.placeholder_ "Titel des Eintrags" ]
       H.div_ [ H.class_ "form-group" ] $ do
         H.textarea_

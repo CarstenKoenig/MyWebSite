@@ -13,7 +13,7 @@ import Control.Monad.Trans
 import Control.Monad.Logger (runNoLoggingT)
 
 import Data.HVect (HVect(..))
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, fromJust)
 import Data.Monoid
 import Data.IORef
 
@@ -35,6 +35,7 @@ import Layout (Page, renderPage)
 import Views.AboutMe
 import Views.BlogPost
 import Views.Login
+import Views.EditPost
 
 import qualified Models.Database as DB
 
@@ -68,6 +69,14 @@ app = prehook baseHook $ do
   get root $ renderPage Home $
     Views.BlogPost.page timeZone ex
 
+  get showPostR $ \id -> do
+    findPost <- DB.getBlogPost id
+    case findPost of
+      Just post -> renderPage (Show id) $
+        Views.BlogPost.page timeZone post
+      Nothing ->
+        redirect "/"
+
   get aboutMeR $ renderPage AboutMe $
     Views.AboutMe.page
 
@@ -80,8 +89,18 @@ app = prehook baseHook $ do
     adminLogon adminHash $ Password pwd
     
   
-  prehook adminHook $
+  prehook adminHook $ do
     get adminR $ text "hi Admin"
+
+    get editPostR $ \id -> renderPage (Edit id) $
+      Views.EditPost.page id
+    post editPostR $ \id -> do
+      title <- fromJust <$> param "title"
+      content <- fromJust <$> param "content"
+      now <- liftIO getCurrentTime
+      id' <- DB.insertBlogPost title content now
+      redirect (routeLinkText $ Show id')
+    
 
 
 example :: IO BlogPost

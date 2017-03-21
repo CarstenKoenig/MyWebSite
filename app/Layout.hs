@@ -55,10 +55,10 @@ layout route page = do
         H.title_ $ toHtml $ title page
       
         -- Bootstrap
-        H.link_ [ H.href_ "css/bootstrap.min.css"
+        H.link_ [ H.href_ "/css/bootstrap.min.css"
                 , H.rel_ "stylesheet" ]
         -- Custom css
-        H.link_ [ H.href_ "css/site.css"
+        H.link_ [ H.href_ "/css/site.css"
                 , H.rel_ "stylesheet" ]
 
         H.style_ $ fromMaybe "" $ additionalStyles page
@@ -82,7 +82,7 @@ layout route page = do
           [ H.src_ "https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js" ]
           T.empty
         -- Bootstrap
-        H.script_ [ H.src_ "js/bootstrap.min.js" ] T.empty
+        H.script_ [ H.src_ "/js/bootstrap.min.js" ] T.empty
         -- MathJax
         H.script_
           [ H.src_ "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML" ]
