@@ -14,7 +14,7 @@ import Routes
 
 type SiteAction ctx a = SpockActionCtx ctx () SiteSession SiteState a
 
-data SiteSession =
+newtype SiteSession =
   SiteSession { logon :: LogonStatus }
 
 
@@ -24,7 +24,7 @@ data LogonStatus
   deriving (Eq, Show)
 
 
-data SiteState = DummyAppState (IORef Int)
+newtype SiteState = DummyAppState (IORef Int)
 
 
 emptySession :: SiteSession

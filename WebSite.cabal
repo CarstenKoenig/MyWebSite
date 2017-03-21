@@ -17,6 +17,7 @@ executable WebSite
   hs-source-dirs:      app
   main-is:             Main.hs
   other-modules:       Layout
+                     , Routes
                      , Session
                      , Routes
                      , Utils.Password
@@ -45,4 +46,5 @@ executable WebSite
                      , bytestring >= 0.10.8
                      , persistent
                      , persistent-postgresql >= 2.6 && < 2.7
+                     , persistent-template
                      
