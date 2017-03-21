@@ -65,13 +65,16 @@ app = prehook baseHook $ do
   timeZone <- liftIO getCurrentTimeZone
   ex <- liftIO example
   
-  get root $ renderPage $ Views.BlogPost.page timeZone ex
+  get root $ renderPage Home $
+    Views.BlogPost.page timeZone ex
 
-  get aboutMeR $ renderPage Views.AboutMe.page
+  get aboutMeR $ renderPage AboutMe $
+    Views.AboutMe.page
 
   getpost logoutR logout
     
-  get loginR $ renderPage Views.Login.page
+  get loginR $ renderPage Login $
+    Views.Login.page
   post loginR $ do
     pwd <- fromMaybe "" <$> param "pwd"
     adminLogon adminHash $ Password pwd

@@ -31,13 +31,12 @@ data Page =
        }
 
 
-renderPage :: MonadIO m => Page -> ActionCtxT ctx m a
-renderPage = layout >=> (html . TL.toStrict . renderText)
+renderPage :: MonadIO m => Route -> Page -> ActionCtxT ctx m a
+renderPage route = layout route >=> (html . TL.toStrict . renderText)
 
 
-layout :: MonadIO m => Page -> ActionCtxT ctx m (Html ())
-layout page = do
-  activePage <- requestRoute
+layout :: MonadIO m => Route -> Page -> ActionCtxT ctx m (Html ())
+layout route page = do
   return $ do
     H.doctype_ 
     H.html_ [ H.lang_ "de" ] $ do
@@ -67,7 +66,7 @@ layout page = do
       H.body_ $ do
 
         H.div_ [ H.class_ "blog-masthead" ] $ do
-          BS.container_ $ nav activePage
+          BS.container_ $ nav route
       
         BS.container_ $ do
           H.div_ [ H.id_ "main", H.role_ "main" ] $ content page
