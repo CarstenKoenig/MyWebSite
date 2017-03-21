@@ -51,4 +51,5 @@ executable WebSite
                      , persistent-template
                      , monad-logger
                      , resource-pool
+                     , hvect
                      

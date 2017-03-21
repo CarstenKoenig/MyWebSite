@@ -11,6 +11,8 @@ import Network.Wai.Middleware.Static (staticPolicy, addBase)
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Logger (runNoLoggingT)
+
+import Data.HVect (HVect(..))
 import Data.Maybe (fromMaybe)
 import Data.Monoid
 import Data.IORef
@@ -53,8 +55,8 @@ main = do
 
 
 app :: SiteApp
-app = do
-
+app = prehook baseHook $ do
+  
   adminHash <- adminPwdHash . appConfig  <$> getState
   
   -- serve static files from local static folder
@@ -75,7 +77,8 @@ app = do
     adminLogon adminHash $ Password pwd
     
   
-  get adminR $ requireAdmin $ text "hi Admin"
+  prehook adminHook $
+    get adminR $ text "hi Admin"
 
 
 example :: IO BlogPost
@@ -89,3 +92,6 @@ example = do
 
 serveStatic :: Middleware
 serveStatic = staticPolicy (addBase "./static")
+
+baseHook :: SiteAction () (HVect '[])
+baseHook = return HNil

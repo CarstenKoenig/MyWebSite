@@ -79,3 +79,8 @@ Die Datenbank ist im Moment fest (siehe `Config.hs`) angelegt.
 
 Einziges Problem war, den `SpockM` Typ richtig zuzordnen (der erste Parameter
 ist das **Backend** und ist hier `SqlBackend`) und den SQL-Pool aufzusetzen.
+
+## Context für Admin
+Die Technik von [hier](https://www.spock.li/2015/08/23/taking_authentication_to_the_next_level.html)
+verwendet um Aktionen (`SiteAdminAction`) die einen Adminzugang voraussetzen
+typsicher zu verwenden
