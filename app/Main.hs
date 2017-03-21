@@ -46,15 +46,17 @@ import Routes
 
 main :: IO ()
 main = do
-  let cfg = defaultAppConfig
+  cfg <- defaultAppConfig
   pool <- DB.initializePool cfg
-  adminHash <- liftIO $ Pwd.readPasswordHashFromFile "admin.pwd"
   spockCfg <- defaultSpockCfg emptySession (PCPool pool) (SiteState cfg)
-  runSpock 8080 (spock spockCfg $ app adminHash)
+  runSpock 8080 (spock spockCfg app)
 
 
-app :: PasswordHash -> SiteApp
-app adminHash = do
+app :: SiteApp
+app = do
+
+  adminHash <- adminPwdHash . appConfig  <$> getState
+  
   -- serve static files from local static folder
   middleware serveStatic
 
