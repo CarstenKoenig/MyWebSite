@@ -23,6 +23,7 @@ executable WebSite
                      , Routes
                      , Utils.Password
                      , Models.BlogPost
+                     , Models.Events
                      , Models.Database
                      , Views.AboutMe
                      , Views.BlogPost
@@ -30,28 +31,29 @@ executable WebSite
                      , Views.Login
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
-                     , data-default
                      , Spock >= 0.11
-                     , mtl
-                     , text
-                     , time
-                     , wai
-                     , warp
-                     , http-types >= 0.9.1
-                     , blaze-markup
+                     , aeson
                      , blaze-html
-                     , wai-middleware-static >= 0.8.1
-                     , lucid >= 2.9.7
-                     , reroute >= 0.4.0.1
-                     , markdown >= 0.1.14
-                     , skylighting >= 0.1.1.5
-                     , cryptohash >= 0.11.9
+                     , blaze-markup
                      , bytestring >= 0.10.8
+                     , cryptohash >= 0.11.9
+                     , data-default
+                     , http-types >= 0.9.1
+                     , hvect
+                     , lucid >= 2.9.7
+                     , markdown >= 0.1.14
+                     , monad-logger
+                     , mtl
                      , persistent
                      , persistent-postgresql >= 2.6 && < 2.7
                      , persistent-template
-                     , monad-logger
+                     , reroute >= 0.4.0.1
                      , resource-pool
-                     , hvect
                      , resourcet
+                     , skylighting >= 0.1.1.5
+                     , text
+                     , time
+                     , wai
+                     , wai-middleware-static >= 0.8.1
+                     , warp
                      

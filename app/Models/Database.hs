@@ -11,29 +11,34 @@
 
 module Models.Database
   ( initializePool
-  , insertBlogPost
-  , updateBlogPost
-  , getBlogPost
+  , addEvents
+  , getEvents
+  , startEvents
   ) where
 
 import Web.Spock hiding (get)
 
+import           Config
+import           Control.Monad (forM_)
 import           Control.Monad.IO.Class  (liftIO)
 import           Control.Monad.Logger (NoLoggingT, runNoLoggingT)
 import           Control.Monad.Trans.Resource(ResourceT, runResourceT)
-import           Database.Persist
-import           Database.Persist.Postgresql
-import           Database.Persist.TH
+import           Data.Aeson(encode, decodeStrict')
+import           Data.ByteString (ByteString)
+import           Data.ByteString.Lazy (toStrict)
+import           Data.Int(Int64)
+import           Data.Maybe (mapMaybe)
 import           Data.Pool (Pool)
 import           Data.Text (Text)
 import qualified Data.Text.Lazy as LT
-import           Data.Time (UTCTime)
+import           Data.Time (UTCTime, getCurrentTime)
+import           Database.Persist
+import           Database.Persist.Postgresql
+import           Database.Persist.TH
+import           Models.Events
+import           Routes
+import           Session
 import           Text.Markdown (Markdown(..))
-
-import qualified Models.BlogPost as BP
-import Config
-import Session
-import Routes
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 BlogPost
@@ -41,6 +46,11 @@ BlogPost
     content Text
     published UTCTime
     deriving Show
+
+Event
+    aggregateId Int64
+    json ByteString
+    added UTCTime
 |]
 
 
@@ -51,30 +61,38 @@ initializePool cfg = do
   return pool
   
 
-insertBlogPost :: Text -> Text -> UTCTime -> SiteAdminAction BlogId
-insertBlogPost title content published =
-  runSQL query
+startEvents :: [SiteEvent] -> SiteAdminAction BlogId
+startEvents events = do
+  time <- liftIO getCurrentTime
+  runSQL $ query time
   where
-    query = fromSqlKey <$> (insert $ BlogPost title content published)
+    next [] = 1
+    next (x:_) = eventAggregateId (entityVal x) + 1
+    json = toStrict . encode
+    query time = do
+      nextId <- next <$> selectList [] [Desc EventAggregateId]
+      forM_ events (\ev -> insert (Event nextId (json ev) time))
+      return nextId
 
 
-updateBlogPost :: BlogId -> Text -> Text -> UTCTime -> SiteAdminAction ()
-updateBlogPost id title content published =
-  runSQL query
+addEvents :: BlogId -> [SiteEvent] -> SiteAdminAction ()
+addEvents blogId events = do
+  time <- liftIO getCurrentTime
+  runSQL $ query time
   where
-    query = repsert (toSqlKey id) $ BlogPost title content published
+    json = toStrict . encode
+    query time =
+      forM_ events (\ev -> insert (Event blogId (json ev) time))
 
 
-getBlogPost :: BlogId -> SiteAction ctx (Maybe BP.BlogPost)
-getBlogPost id =
-  runSQL query
-  where
-    query = fmap toModel <$> get (toSqlKey id)
-    toModel post =
-      BP.BlogPost
-         (Markdown $ LT.fromStrict $ blogPostContent post)
-         (blogPostTitle post)
-         (blogPostPublished post)
+getEvents :: Maybe BlogId -> SiteAction ctx [SiteEvent]
+getEvents ido = do
+  let map = mapMaybe (decodeStrict' . eventJson . entityVal)
+  let filter =
+        case ido of
+          Nothing -> []
+          Just id -> [EventAggregateId ==. id]
+  runSQL (map <$> selectList [] [Asc EventId])
 
 
 runSQL :: (HasSpock m, SpockConn m ~ SqlBackend) =>
