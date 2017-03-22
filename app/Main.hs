@@ -92,14 +92,24 @@ app = prehook baseHook $ do
   prehook adminHook $ do
     get adminR $ text "hi Admin"
 
-    get editPostR $ \id -> renderPage (Edit id) $
-      Views.EditPost.page id
+    get newPostR $ renderPage New $
+      Views.EditPost.page Nothing Nothing
+    post newPostR $ do
+      title <- fromJust <$> param "title"
+      content <- fromJust <$> param "content"
+      now <- liftIO getCurrentTime
+      id <- DB.insertBlogPost title content now
+      redirect (routeLinkText $ Show id)
+
+    get editPostR $ \id -> do
+      findPost <- DB.getBlogPost id
+      renderPage (Edit id) $ Views.EditPost.page (Just id) findPost
     post editPostR $ \id -> do
       title <- fromJust <$> param "title"
       content <- fromJust <$> param "content"
       now <- liftIO getCurrentTime
-      id' <- DB.insertBlogPost title content now
-      redirect (routeLinkText $ Show id')
+      DB.updateBlogPost id title content now
+      redirect (routeLinkText $ Show id)
     
 
 

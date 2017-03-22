@@ -35,6 +35,9 @@ showPostR = var
 editPostR :: Path '[BlogId] Open
 editPostR = "edit" <//> var
 
+newPostR :: Path '[] Open
+newPostR = "new"
+
 
 data Route
   = Home
@@ -42,6 +45,7 @@ data Route
   | Login
   | Show BlogId
   | Edit BlogId
+  | New
   deriving Eq
 
 
@@ -52,6 +56,7 @@ instance Show Route where
   show Home = "Home"
   show AboutMe = "Über mich"
   show Login = "Logon"
+  show New = "Neuer Eintrag"
   show (Edit _) = "Eintrag editieren"
   show (Show _) = "Eintrag ansehen"
 
@@ -61,5 +66,6 @@ routeLinkText Home = renderRoute "/"
 routeLinkText AboutMe = renderRoute aboutMeR
 routeLinkText Login = renderRoute loginR
 routeLinkText (Show id) = renderRoute showPostR id
+routeLinkText New = renderRoute newPostR
 routeLinkText (Edit id) = renderRoute editPostR id
 

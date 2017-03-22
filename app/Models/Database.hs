@@ -12,6 +12,7 @@
 module Models.Database
   ( initializePool
   , insertBlogPost
+  , updateBlogPost
   , getBlogPost
   ) where
 
@@ -55,6 +56,13 @@ insertBlogPost title content published =
   runSQL query
   where
     query = fromSqlKey <$> (insert $ BlogPost title content published)
+
+
+updateBlogPost :: BlogId -> Text -> Text -> UTCTime -> SiteAdminAction ()
+updateBlogPost id title content published =
+  runSQL query
+  where
+    query = repsert (toSqlKey id) $ BlogPost title content published
 
 
 getBlogPost :: BlogId -> SiteAction ctx (Maybe BP.BlogPost)
