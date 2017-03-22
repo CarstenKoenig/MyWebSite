@@ -77,8 +77,8 @@ app = prehook baseHook $ do
       Nothing ->
         redirect "/"
 
-  get aboutMeR $ renderPage AboutMe $
-    Views.AboutMe.page
+  get aboutMeR $
+    renderPage AboutMe Views.AboutMe.page
 
   getpost logoutR logout
     
@@ -102,6 +102,7 @@ app = prehook baseHook $ do
       now <- liftIO getCurrentTime
       id <- DB.insertBlogPost title content now
       redirect (routeLinkText $ Show id)
+      
 
     get editPostR $ \id -> do
       findPost <- DB.getBlogPost id
