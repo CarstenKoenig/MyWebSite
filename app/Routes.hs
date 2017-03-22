@@ -1,19 +1,18 @@
 {-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds #-}
 module Routes where
 
-import Web.Spock
-import Web.Spock.Config
-
-import Network.Wai (pathInfo)
-
 import Data.HVect(HVect(..))
 import Data.Int (Int64)
 import Data.Monoid
 import Data.Text (Text)
 import qualified Data.Text as T
-
+import Network.Wai (pathInfo)
 import Web.Routing.Combinators (PathState(..))
+import Web.Spock
+import Web.Spock.Config
 
+newtype RedirectTo = RedirectTo Text
+  deriving (Show, Eq)
 
 -- * ROUTES
 

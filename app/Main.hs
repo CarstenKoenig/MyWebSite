@@ -82,11 +82,13 @@ app = prehook baseHook $ do
 
   getpost logoutR logout
     
-  get loginR $ renderPage Login $
-    Views.Login.page
+  get loginR $ do
+    redTo <- fmap RedirectTo <$> param "redirect"
+    renderPage Login $ Views.Login.page redTo
   post loginR $ do
     pwd <- fromMaybe "" <$> param "pwd"
-    adminLogon adminHash $ Password pwd
+    redTo <- fmap RedirectTo <$> param "redirect"
+    adminLogon redTo adminHash $ Password pwd
     
   
   prehook adminHook $ do
