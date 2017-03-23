@@ -24,6 +24,7 @@ executable WebSite
                      , Utils.Password
                      , Models.BlogPost
                      , Models.Events
+                     , Models.EventHandlers
                      , Models.Database
                      , Views.AboutMe
                      , Views.BlogPost
@@ -53,6 +54,7 @@ executable WebSite
                      , skylighting >= 0.1.1.5
                      , text
                      , time
+                     , transformers
                      , wai
                      , wai-middleware-static >= 0.8.1
                      , warp
