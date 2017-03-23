@@ -22,7 +22,7 @@ import           Config
 import           Control.Monad (forM_)
 import           Control.Monad.IO.Class  (liftIO)
 import           Control.Monad.Logger (NoLoggingT, runNoLoggingT)
-import           Control.Monad.Trans.Resource(ResourceT, runResourceT)
+import           Control.Monad.Trans.Resource(ResourceT, MonadBaseControl, runResourceT)
 import           Data.Aeson(encode, decodeStrict')
 import           Data.ByteString (ByteString)
 import           Data.ByteString.Lazy (toStrict)
@@ -39,19 +39,23 @@ import           Models.Events
 import           Routes
 import           Session
 import           Text.Markdown (Markdown(..))
+import           Control.Monad.Trans.Reader (ReaderT)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
-BlogPost
-    title Text
-    content Text
-    published UTCTime
-    deriving Show
-
 Event
     aggregateId Int64
     json ByteString
     added UTCTime
+
+EventHandler
+    name Text
+    seenNumber Int64
+    error Text Maybe Text default=NULL
+    updated UTCTime default=now()
 |]
+
+
+type Query a = ReaderT SqlBackend IO a
 
 
 initializePool :: AppConfig -> IO (Pool SqlBackend)
@@ -64,7 +68,7 @@ initializePool cfg = do
 startEvents :: [SiteEvent] -> SiteAdminAction BlogId
 startEvents events = do
   time <- liftIO getCurrentTime
-  runSQL $ query time
+  runSqlAction $ query time
   where
     next [] = 1
     next (x:_) = eventAggregateId (entityVal x) + 1
@@ -78,7 +82,7 @@ startEvents events = do
 addEvents :: BlogId -> [SiteEvent] -> SiteAdminAction ()
 addEvents blogId events = do
   time <- liftIO getCurrentTime
-  runSQL $ query time
+  runSqlAction $ query time
   where
     json = toStrict . encode
     query time =
@@ -92,11 +96,17 @@ getEvents ido = do
         case ido of
           Nothing -> []
           Just id -> [EventAggregateId ==. id]
-  runSQL (map <$> selectList [] [Asc EventId])
+  runSqlAction (map <$> selectList [] [Asc EventId])
 
 
-runSQL :: (HasSpock m, SpockConn m ~ SqlBackend) =>
-          SqlPersistT (NoLoggingT (ResourceT IO)) a -> m a
-runSQL action =
-    runQuery $ runResourceT . runNoLoggingT . runSqlConn action
-{-# INLINE runSQL #-}
+runSqlAction :: (HasSpock m, SpockConn m ~ SqlBackend)
+       => Query a -> m a
+runSqlAction action =
+  runQuery (runSqlConn action)
+{-# INLINE runSqlAction #-}
+
+
+runOnPool :: Pool SqlBackend -> Query a -> IO a
+runOnPool pool action =
+  runSqlPool action pool
+{-# INLINE runOnPool #-}
