@@ -20,6 +20,7 @@ import Lucid (Html)
 import qualified Lucid.Html5 as H
 import Models.BlogPost
 import Models.Database (initializePool)
+import Models.EventHandlers
 import Network.HTTP.Types (urlDecode)
 import Network.Wai (Middleware, Application)
 import Network.Wai.Handler.Warp (run)
@@ -36,12 +37,12 @@ import Web.Routing.Combinators (PathState(..))
 import Web.Spock
 import Web.Spock.Config
 
-
 main :: IO ()
 main = do
   cfg <- defaultAppConfig
   pool <- initializePool cfg
   spockCfg <- defaultSpockCfg emptySession (PCPool pool) (SiteState cfg)
+  executeHandler pool blogIndexHandler
   runSpock 8080 (spock spockCfg app)
 
 

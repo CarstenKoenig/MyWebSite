@@ -3,12 +3,15 @@
 module Models.EventHandlers
   (EventHandler (..)
   , executeHandler
+  , blogIndexHandler
   )
 where
 
+import qualified Data.Char as C
 import Data.Int (Int64)
 import Data.Pool (Pool)
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Time (UTCTime)
 import Database.Persist
 import Database.Persist.Postgresql
@@ -42,8 +45,19 @@ blogIndexHandler = EventHandler name handle
       markHandeledEventNumber name evNr
       
     query aggId (BlogEntry (TitleSet title)) =
-      setBlogIndexTitle aggId title
+      setBlogIndexTitle aggId (validateTitle title)
     query aggId (BlogEntry (PublishedAt time)) =
       setBlogIndexDate aggId time
     query _ _ =
       return ()
+
+
+validateTitle :: Text -> Text
+validateTitle = T.toLower . T.filter validLetter . T.map replace
+  where
+    validLetter '_' = True
+    validLetter '-' = True
+    validLetter c = C.isAscii c && not (C.isPunctuation c)
+    replace c
+      | C.isSpace c = '-'
+      | otherwise = c

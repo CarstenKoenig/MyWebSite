@@ -86,9 +86,15 @@ lastSeenHandlerEventNumber name =
 markHandeledEventNumber :: Text -> Int64 -> Query ()
 markHandeledEventNumber name evNr = do
   now <- liftIO getCurrentTime
-  update (EventHandlerKey name)
-    [ EventHandlerSeenNumber =. evNr
-    , EventHandlerUpdated =. now ]
+  found <- get (EventHandlerKey name)
+  case found of
+    Nothing ->
+      insertKey (EventHandlerKey name)
+                (EventHandler name evNr Nothing now)
+    Just _ ->
+      update (EventHandlerKey name)
+             [ EventHandlerSeenNumber =. evNr
+             , EventHandlerUpdated =. now ]
 
 ----------------------------------------------------------------------
 -- Blog Index Operations
@@ -97,22 +103,29 @@ setBlogIndexTitle :: BlogId -> Text -> Query ()
 setBlogIndexTitle blogId title = do
   now <- liftIO getCurrentTime
   let (year, month, _) = toGregorian (utctDay now)
-  _ <- upsert
-       (BlogIndex (fromIntegral year) month title blogId) 
-       [ BlogIndexTitle =. title ]
-  return ()
+  found <- get (BlogIndexKey blogId)
+  case found of
+    Nothing ->
+      insertKey (BlogIndexKey blogId)
+                (BlogIndex (fromIntegral year) month title blogId)
+    Just _ ->
+      update (BlogIndexKey blogId)
+             [ BlogIndexTitle =. title ]
 
 
 setBlogIndexDate :: BlogId -> UTCTime -> Query ()
 setBlogIndexDate blogId time = do
   let (year, month, _) = toGregorian (utctDay time)
       title = pack $ show blogId
-  _ <- upsert
-       (BlogIndex (fromIntegral year) month title blogId) 
-       [ BlogIndexYear =. fromIntegral year
-       , BlogIndexMonth =. month ]
-  return ()
-  
+  found <- get (BlogIndexKey blogId)
+  case found of
+    Nothing ->
+      insertKey (BlogIndexKey blogId)
+                (BlogIndex (fromIntegral year) month title blogId) 
+    Just _ ->
+      update (BlogIndexKey blogId)
+             [ BlogIndexYear =. fromIntegral year
+             , BlogIndexMonth =. month ]  
 
 
 indexToId :: Int -> Int -> Text -> Query (Maybe BlogId)
@@ -175,7 +188,9 @@ iterateOverEvents pool startNr action =
                       [Asc EventId]
     let acts = mapMaybe applyEv evs
     sequence_ acts
-    return . maximum . map (fromSqlKey . entityKey) $ evs
+    if null evs
+      then return startNr
+      else return . maximum . map (fromSqlKey . entityKey) $ evs
    
 ----------------------------------------------------------------------
 -- SQL execution
