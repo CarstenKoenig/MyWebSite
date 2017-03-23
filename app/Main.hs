@@ -21,7 +21,7 @@ import qualified Lucid.Html5 as H
 import Models.BlogPost
 import Models.Database (initializePool)
 import Models.EventHandlers
-import Network.HTTP.Types (urlDecode)
+import Network.HTTP.Types (urlDecode, notFound404)
 import Network.Wai (Middleware, Application)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
@@ -60,13 +60,21 @@ app = prehook baseHook $ do
   get root $ renderPage Home $
     Views.BlogPost.page timeZone ex
 
-  get showPostR $ \id -> do
-    findPost <- getBlogPost id
+  get showPostIdR $ \id -> do
+    findPost <- getBlogPostId id
     case findPost of
-      Just post -> renderPage (Show id) $
+      Just post -> renderPage (ShowId id) $
         Views.BlogPost.page timeZone post
       Nothing ->
-        redirect "/"
+        setStatus notFound404
+
+  get showPostPathR $ \year month title -> do
+    findPost <- getBlogPostPath year month title
+    case findPost of
+      Just post -> renderPage (ShowPath year month title) $
+        Views.BlogPost.page timeZone post
+      Nothing ->
+        setStatus notFound404
 
   get aboutMeR $
     renderPage AboutMe Views.AboutMe.page
@@ -92,18 +100,18 @@ app = prehook baseHook $ do
       content <- fromJust <$> param "content"
       now <- liftIO getCurrentTime
       id <- insertBlogPost title content now
-      redirect (routeLinkText $ Show id)
+      redirect (routeLinkText $ ShowId id)
       
 
     get editPostR $ \id -> do
-      findPost <- getBlogPost id
+      findPost <- getBlogPostId id
       renderPage (Edit id) $ Views.EditPost.page (Just id) findPost
     post editPostR $ \id -> do
       title <- fromJust <$> param "title"
       content <- fromJust <$> param "content"
       now <- liftIO getCurrentTime
       updateBlogPost id title content now
-      redirect (routeLinkText $ Show id)
+      redirect (routeLinkText $ ShowId id)
     
 
 

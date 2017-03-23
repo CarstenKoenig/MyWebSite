@@ -4,7 +4,8 @@ module Models.BlogPost
   ( BlogPost (..)
   , insertBlogPost
   , updateBlogPost
-  , getBlogPost
+  , getBlogPostId
+  , getBlogPostPath
   ) where
 
 import Control.Monad.IO.Class (liftIO)
@@ -42,9 +43,8 @@ updateBlogPost id title content published =
     , PublishedAt published
     ])
 
-
-getBlogPost :: BlogId -> SiteAction ctx (Maybe BlogPost)
-getBlogPost id = do
+getBlogPostId :: BlogId -> SiteAction ctx (Maybe BlogPost)
+getBlogPostId id = do
   now <- liftIO getCurrentTime
   evs <- getEvents (Just id)
   if null evs
@@ -55,3 +55,9 @@ getBlogPost id = do
     update post (BlogEntry (TitleSet t)) = post { title = t }
     update post (BlogEntry (ContentSet c)) = post { content = c }
     update post (BlogEntry (PublishedAt t)) = post { publishedTime = t }
+
+
+getBlogPostPath :: Int -> Int -> Text -> SiteAction ctx (Maybe BlogPost)
+getBlogPostPath year month title =
+  runSqlAction (indexToId year month title)
+  >>= maybe (return Nothing) getBlogPostId

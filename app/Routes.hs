@@ -28,8 +28,11 @@ loginR = "login"
 adminR :: Path '[] Open
 adminR = "admin"
 
-showPostR :: Path '[BlogId] Open
-showPostR = var
+showPostIdR :: Path '[BlogId] Open
+showPostIdR = var
+
+showPostPathR :: Path '[Int,Int,Text] Open
+showPostPathR = var <//> var <//> var
 
 editPostR :: Path '[BlogId] Open
 editPostR = "edit" <//> var
@@ -42,7 +45,8 @@ data Route
   = Home
   | AboutMe
   | Login
-  | Show BlogId
+  | ShowId BlogId
+  | ShowPath Int Int Text
   | Edit BlogId
   | New
   deriving Eq
@@ -57,14 +61,16 @@ instance Show Route where
   show Login = "Logon"
   show New = "Neuer Eintrag"
   show (Edit _) = "Eintrag editieren"
-  show (Show _) = "Eintrag ansehen"
+  show (ShowId _) = "Eintrag ansehen"
+  show ShowPath {} = "Eintrag ansehen"
 
 
 routeLinkText :: Route -> Text
 routeLinkText Home = renderRoute "/"
 routeLinkText AboutMe = renderRoute aboutMeR
 routeLinkText Login = renderRoute loginR
-routeLinkText (Show id) = renderRoute showPostR id
+routeLinkText (ShowId id) = renderRoute showPostIdR id
+routeLinkText (ShowPath y m t) = renderRoute showPostPathR y m t
 routeLinkText New = renderRoute newPostR
 routeLinkText (Edit id) = renderRoute editPostR id
 

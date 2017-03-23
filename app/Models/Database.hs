@@ -168,7 +168,7 @@ getEvents ido = do
         case ido of
           Nothing -> []
           Just id -> [EventAggregateId ==. id]
-  runSqlAction (map <$> selectList [] [Asc EventId])
+  runSqlAction (map <$> selectList filter [Asc EventId])
 
 
 iterateOverEvents :: Pool SqlBackend ->  Int64
