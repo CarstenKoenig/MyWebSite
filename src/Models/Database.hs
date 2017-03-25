@@ -52,4 +52,4 @@ BlogCategoryMap
 |]
 
 
-type Query a = ReaderT SqlBackend IO a
+type Query = ReaderT SqlBackend IO

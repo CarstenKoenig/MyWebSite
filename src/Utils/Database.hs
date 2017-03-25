@@ -33,10 +33,10 @@ initializePool cfg = do
 runEventAction :: (Monad m, HasSpock m
                   , SpockConn m ~ SqlBackend
                   , SpockState m ~ SiteState)
-               => ([Models.Events.EventHandler] -> Query a) -> m a
-runEventAction getQuery = do
+               => EventQuery a -> m a
+runEventAction query = do
   hds <- handlers . appConfig <$> getState
-  runSqlAction (getQuery hds)
+  runSqlAction (toHandlerQuery hds query)
 
 
 runSqlAction :: (HasSpock m, SpockConn m ~ SqlBackend)

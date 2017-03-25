@@ -36,20 +36,20 @@ data BlogPost =
 insertBlogPost :: Text -> Text -> UTCTime -> [Category] -> SiteAdminAction BlogId
 insertBlogPost title content published categories = runEventAction query
   where
-    query handlers = do
-      blogId <- startEvents (map BlogEntry
-                             [ TitleSet title
-                             , ContentSet (Markdown $ fromStrict content)
-                             , PublishedAt published
-                             ]) handlers
+    query = do
+      blogId <- newFromEvents (map BlogEntry
+                               [ TitleSet title
+                               , ContentSet (Markdown $ fromStrict content)
+                               , PublishedAt published
+                               ])
       let cats = map (BlogEntry . AddedToCategory) categories
-      addEvents blogId cats handlers
+      appendEvents blogId cats
       return blogId
 
 
 updateBlogPost :: BlogId -> Text -> Text -> UTCTime -> SiteAdminAction ()
 updateBlogPost id title content published = runEventAction $
-  addEvents id (map BlogEntry
+  appendEvents id (map BlogEntry
     [ TitleSet title
     , ContentSet (Markdown $ fromStrict content)
     , PublishedAt published

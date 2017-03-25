@@ -4,6 +4,8 @@ module Models.Events where
 
 import Control.Monad(fail, forM_, forM)
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Writer.Lazy (WriterT, runWriterT, tell)
+import Control.Monad.Trans.Class (lift)
 import Data.Aeson (ToJSON(..),FromJSON(..), Value(..), (.:), (.=), object, encode, decodeStrict')
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (toStrict)
@@ -75,42 +77,51 @@ data EventHandler =
   }
 
 
-----------------------------------------------------------------------
--- DB Queries
+type EventQuery =
+  WriterT [Event SiteEvent] Query
 
-startEvents :: [SiteEvent] -> [EventHandler] -> Query BlogId
-startEvents events handlers = do
+
+toHandlerQuery :: [EventHandler] -> EventQuery a -> Query a
+toHandlerQuery handlers eq = do
+  (res, evs) <- runWriterT eq
+  runHandlers evs
+  return res
+  where
+    runHandlers evs =
+      sequence_ [ handleEvent h ev | h <- handlers, ev <- evs ]
+
+
+newFromEvents :: [SiteEvent] -> EventQuery BlogId
+newFromEvents events = do
   time <- liftIO getCurrentTime
-  query time
+  nextId <- next <$> lift (selectList [] [Desc DB.EventAggregateId])
+  nrs <- lift $ forM events (\ev -> insert (DB.Event nextId (json ev) time))
+  tell $ map (wrap time nextId) $ zip nrs events
+  return nextId
   where
     next [] = 1
     next (x:_) = DB.eventAggregateId (entityVal x) + 1
     json = toStrict . encode
-    query time = do
-      nextId <- next <$> selectList [] [Desc DB.EventAggregateId]
-      nrs <- forM events (\ev -> insert (DB.Event nextId (json ev) time))
-      runHandlers $ map (wrap time nextId) (zip nrs events)
-      return nextId
-    runHandlers evs =
-      sequence_ [ handleEvent h ev | h <- handlers, ev <- evs ]
     wrap time nextId (nr, ev) =
       Event ev (fromSqlKey nr) nextId time
+  
 
-
-addEvents :: BlogId -> [SiteEvent] -> [EventHandler] -> Query ()
-addEvents blogId events handlers = do
+appendEvents :: BlogId -> [SiteEvent] -> EventQuery ()
+appendEvents blogId events = do
   time <- liftIO getCurrentTime
-  query time
+  nrs <- lift $ forM events (\ev -> insert (DB.Event blogId (json ev) time))
+  tell $ map (wrap time) $ zip nrs events
   where
+    next [] = 1
+    next (x:_) = DB.eventAggregateId (entityVal x) + 1
     json = toStrict . encode
-    query time = do
-      nrs <- forM events (\ev -> insert (DB.Event blogId (json ev) time))
-      runHandlers $ map (wrap time) (zip nrs events)
-    runHandlers evs =
-      sequence_ [ handleEvent h ev | h <- handlers, ev <- evs ]
     wrap time (nr, ev) =
       Event ev (fromSqlKey nr) blogId time
 
+  
+
+----------------------------------------------------------------------
+-- DB Queries
 
 getEvents :: Maybe BlogId -> Query [Event SiteEvent]
 getEvents ido = do
