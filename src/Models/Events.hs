@@ -67,10 +67,10 @@ data EventHandler =
 ----------------------------------------------------------------------
 -- DB Queries
 
-startEvents :: [EventHandler] -> [SiteEvent] -> SiteAdminAction BlogId
+startEvents :: [EventHandler] -> [SiteEvent] -> Query BlogId
 startEvents handlers events = do
   time <- liftIO getCurrentTime
-  DB.runSqlAction $ query time
+  query time
   where
     next [] = 1
     next (x:_) = DB.eventAggregateId (entityVal x) + 1
@@ -86,10 +86,10 @@ startEvents handlers events = do
       Event ev (fromSqlKey nr) nextId time
 
 
-addEvents :: [EventHandler] -> BlogId -> [SiteEvent] -> SiteAdminAction ()
+addEvents :: [EventHandler] -> BlogId -> [SiteEvent] -> Query ()
 addEvents handlers blogId events = do
   time <- liftIO getCurrentTime
-  DB.runSqlAction $ query time
+  query time
   where
     json = toStrict . encode
     query time = do
@@ -101,13 +101,13 @@ addEvents handlers blogId events = do
       Event ev (fromSqlKey nr) blogId time
 
 
-getEvents :: Maybe BlogId -> SiteAction ctx [Event SiteEvent]
+getEvents :: Maybe BlogId -> Query [Event SiteEvent]
 getEvents ido = do
   let filter =
         case ido of
           Nothing -> []
           Just id -> [ DB.EventAggregateId ==. id]
-  DB.runSqlAction (mapMaybe mapEvent <$> selectList filter [Asc DB.EventId])
+  mapMaybe mapEvent <$> selectList filter [Asc DB.EventId]
 
 
 loadEventsAfter :: Int64 -> Query (Int64, [Event SiteEvent])

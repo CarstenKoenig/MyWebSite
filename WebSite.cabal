@@ -22,6 +22,7 @@ executable WebSite
                      , Session
                      , Routes
                      , Utils.Password
+                     , Utils.Database
                      , Models.BlogPost
                      , Models.Events
                      , Models.Database

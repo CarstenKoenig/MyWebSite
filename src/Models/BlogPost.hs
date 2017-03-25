@@ -19,6 +19,7 @@ import Models.Events
 import Routes
 import Session
 import Text.Markdown (Markdown(..))
+import Utils.Database
 
 data BlogPost =
   BlogPost { content :: Markdown
@@ -28,7 +29,7 @@ data BlogPost =
 
 
 insertBlogPost :: Text -> Text -> UTCTime -> SiteAdminAction BlogId
-insertBlogPost title content published =
+insertBlogPost title content published = runSqlAction $
   startEvents handlers (map BlogEntry
     [ TitleSet title
     , ContentSet (Markdown $ fromStrict content)
@@ -37,7 +38,7 @@ insertBlogPost title content published =
 
 
 updateBlogPost :: BlogId -> Text -> Text -> UTCTime -> SiteAdminAction ()
-updateBlogPost id title content published =
+updateBlogPost id title content published = runSqlAction $
   addEvents handlers id (map BlogEntry
     [ TitleSet title
     , ContentSet (Markdown $ fromStrict content)
@@ -48,7 +49,7 @@ updateBlogPost id title content published =
 getBlogPostId :: BlogId -> SiteAction ctx (Maybe BlogPost)
 getBlogPostId id = do
   now <- liftIO getCurrentTime
-  evs <- getEvents (Just id)
+  evs <- runSqlAction $ getEvents (Just id)
   if null evs
     then return Nothing
     else return . Just . foldl' update (emptyPost now) $ map event evs
@@ -61,7 +62,7 @@ getBlogPostId id = do
 
 getBlogPostPath :: Int -> Int -> Text -> SiteAction ctx (Maybe BlogPost)
 getBlogPostPath year month title =
-  DB.runSqlAction (indexToId year month title)
+  runSqlAction (indexToId year month title)
   >>= maybe (return Nothing) getBlogPostId
 
 
