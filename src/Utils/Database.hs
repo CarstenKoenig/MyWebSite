@@ -18,6 +18,7 @@ import           Models.Database
 import           Routes
 import           Session
 import           Text.Markdown (Markdown(..))
+import           Models.Events
 
 ----------------------------------------------------------------------
 -- SQL execution
@@ -27,6 +28,15 @@ initializePool cfg = do
   pool <- runNoLoggingT $ createPostgresqlPool (appConfigDb cfg) 5
   runNoLoggingT $ runSqlPool (runMigration migrateAll) pool
   return pool
+
+
+runEventAction :: (Monad m, HasSpock m
+                  , SpockConn m ~ SqlBackend
+                  , SpockState m ~ SiteState)
+               => ([Models.Events.EventHandler] -> Query a) -> m a
+runEventAction getQuery = do
+  hds <- handlers . appConfig <$> getState
+  runSqlAction (getQuery hds)
 
 
 runSqlAction :: (HasSpock m, SpockConn m ~ SqlBackend)

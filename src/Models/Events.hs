@@ -66,8 +66,8 @@ data EventHandler =
 ----------------------------------------------------------------------
 -- DB Queries
 
-startEvents :: [EventHandler] -> [SiteEvent] -> Query BlogId
-startEvents handlers events = do
+startEvents :: [SiteEvent] -> [EventHandler] -> Query BlogId
+startEvents events handlers = do
   time <- liftIO getCurrentTime
   query time
   where
@@ -85,8 +85,8 @@ startEvents handlers events = do
       Event ev (fromSqlKey nr) nextId time
 
 
-addEvents :: [EventHandler] -> BlogId -> [SiteEvent] -> Query ()
-addEvents handlers blogId events = do
+addEvents :: BlogId -> [SiteEvent] -> [EventHandler] -> Query ()
+addEvents blogId events handlers = do
   time <- liftIO getCurrentTime
   query time
   where

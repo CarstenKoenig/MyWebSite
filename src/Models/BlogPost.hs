@@ -29,8 +29,8 @@ data BlogPost =
 
 
 insertBlogPost :: Text -> Text -> UTCTime -> SiteAdminAction BlogId
-insertBlogPost title content published = runSqlAction $
-  startEvents handlers (map BlogEntry
+insertBlogPost title content published = runEventAction $
+  startEvents (map BlogEntry
     [ TitleSet title
     , ContentSet (Markdown $ fromStrict content)
     , PublishedAt published
@@ -38,8 +38,8 @@ insertBlogPost title content published = runSqlAction $
 
 
 updateBlogPost :: BlogId -> Text -> Text -> UTCTime -> SiteAdminAction ()
-updateBlogPost id title content published = runSqlAction $
-  addEvents handlers id (map BlogEntry
+updateBlogPost id title content published = runEventAction $
+  addEvents id (map BlogEntry
     [ TitleSet title
     , ContentSet (Markdown $ fromStrict content)
     , PublishedAt published
@@ -64,8 +64,3 @@ getBlogPostPath :: Int -> Int -> Text -> SiteAction ctx (Maybe BlogPost)
 getBlogPostPath year month title =
   runSqlAction (indexToId year month title)
   >>= maybe (return Nothing) getBlogPostId
-
-
-handlers :: [EventHandler]
-handlers = [blogIndexHandler]
-  
