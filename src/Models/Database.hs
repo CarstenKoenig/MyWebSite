@@ -44,6 +44,11 @@ BlogIndex
     aggregateId Int64
     UniquePath year month title
     Primary aggregateId
+
+BlogCategoryMap
+    aggregateId Int64
+    category Text
+    Primary aggregateId category
 |]
 
 

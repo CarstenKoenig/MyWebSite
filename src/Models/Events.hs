@@ -33,16 +33,17 @@ newtype SiteEvent
   = BlogEntry BlogEntryEvent
   deriving (Show, Eq, Generic)
 
-
 instance ToJSON SiteEvent
 instance FromJSON SiteEvent
+
 
 data BlogEntryEvent
   = ContentSet Markdown
   | TitleSet Text
   | PublishedAt UTCTime
+  | AddedToCategory Category
+  | RemovedFromCategory Category
   deriving (Show, Eq, Generic)
-
 
 instance ToJSON BlogEntryEvent
 instance FromJSON BlogEntryEvent
@@ -54,6 +55,17 @@ instance FromJSON Markdown where
 
 instance ToJSON Markdown where
   toJSON (Markdown text) = object [ "markdown" .= text ]
+
+
+newtype Category =
+  Category { categoryName :: Text }
+  deriving (Eq, Show)
+
+instance FromJSON Category where
+  parseJSON v = Category <$> parseJSON v
+
+instance ToJSON Category where
+  toJSON (Category text) = toJSON text
 
 
 data EventHandler =

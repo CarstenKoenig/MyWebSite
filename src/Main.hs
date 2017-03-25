@@ -18,11 +18,10 @@ import Database.Persist.Postgresql (SqlBackend, createPostgresqlPool)
 import Layout (Page, renderPage)
 import Lucid (Html)
 import qualified Lucid.Html5 as H
-import Models.BlogIndex
+import Models.BlogCategory
 import qualified Models.BlogIndex as Index
 import Models.BlogPost
-import Models.Events
-import Models.Events (forwardEventHandlers)
+import Models.Events (EventHandler, Category(..), forwardEventHandlers)
 import Network.HTTP.Types (urlDecode, notFound404)
 import Network.Wai (Middleware, Application)
 import Network.Wai.Handler.Warp (run)
@@ -50,7 +49,10 @@ main = do
 
 
 eventHandlers :: [EventHandler]
-eventHandlers = [blogIndexHandler]
+eventHandlers =
+  [ Index.blogIndexHandler
+  , blogCategoryHandler
+  ] 
 
 
 app :: SiteApp
@@ -106,7 +108,7 @@ app = prehook baseHook $ do
       title <- fromJust <$> param "title"
       content <- fromJust <$> param "content"
       now <- liftIO getCurrentTime
-      id <- insertBlogPost title content now
+      id <- insertBlogPost title content now []
       redirect (routeLinkText $ ShowId id)
       
 
@@ -128,7 +130,7 @@ example = do
   return $
     BlogPost
     "#Hey you\n`what is up`?\n\n```haskell\nf :: Int -> Bool\nf 0 = True\nf _ = False\n```"
-    "Testblogpost" time
+    "Testblogpost" time [Category "Test"]
 
 
 serveStatic :: Middleware
