@@ -21,13 +21,22 @@ import Routes
 import Session
 import Text.Markdown(Markdown(..))
 
+
+data Event ev =
+  Event { event       :: ev
+        , eventNr     :: Int64
+        , aggregateId :: Int64
+        , addedAt     :: UTCTime
+        } deriving (Show, Eq)
+
+
 newtype SiteEvent
   = BlogEntry BlogEntryEvent
   deriving (Show, Eq, Generic)
 
+
 instance ToJSON SiteEvent
 instance FromJSON SiteEvent
-
 
 data BlogEntryEvent
   = ContentSet Markdown
@@ -85,20 +94,29 @@ getEvents ido = do
   DB.runSqlAction (map <$> selectList filter [Asc DB.EventId])
 
 
-iterateOverEvents :: Int64 -> (Int64 -> SiteEvent -> Query ())
+iterateOverEvents :: Int64 -> (Event SiteEvent -> Query ())
                   -> Query Int64
-iterateOverEvents lastSeen action =
-  let
-    applyEv ev =
-      let evVal = entityVal ev
-      in fmap
-           (action (DB.eventAggregateId evVal)
-           ) (decodeStrict' $ DB.eventJson evVal)
-  in do
-    evs <- selectList [DB.EventId >=. toSqlKey (lastSeen + 1)]
-                      [Asc DB.EventId]
-    let acts = mapMaybe applyEv evs
-    sequence_ acts
-    if null evs
-      then return lastSeen
-      else return . maximum . map (fromSqlKey . entityKey) $ evs
+iterateOverEvents lastSeen action = do
+  evs <- selectList [DB.EventId >=. toSqlKey (lastSeen + 1)]
+                    [Asc DB.EventId]
+  let acts = mapMaybe applyEv evs
+  sequence_ acts
+  if null evs
+    then return lastSeen
+    else return . maximum . map (fromSqlKey . entityKey) $ evs
+    
+  where
+    applyEv = fmap action . wrapEvent
+
+
+
+wrapEvent :: FromJSON ev => Entity DB.Event -> Maybe (Event ev)
+wrapEvent row = do
+  val <- getJson
+  return $ Event val nr id added
+  where
+    evVal = entityVal row
+    nr = fromSqlKey $ entityKey row
+    id = DB.eventAggregateId evVal
+    added = DB.eventAdded evVal
+    getJson  = decodeStrict' $ DB.eventJson evVal

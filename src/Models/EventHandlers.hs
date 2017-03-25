@@ -6,6 +6,7 @@ module Models.EventHandlers
   )
 where
 
+import Control.Monad (forM_)
 import Control.Monad.IO.Class(liftIO)
 import qualified Data.Char as C
 import Data.Int (Int64)
@@ -23,7 +24,7 @@ import Models.Events
 data EventHandler =
   EventHandler
   { handlerName :: Text
-  , handleEvent :: Int64 -> SiteEvent -> Query ()
+  , handleEvent :: Event SiteEvent -> Query ()
   }
 
 
@@ -33,6 +34,13 @@ executeHandlerQuery handler = do
   seenNr <- iterateOverEvents lastNr (handleEvent handler)
   markHandeledEventNumber (handlerName handler) seenNr
 
+
+foldEvents :: EventHandler -> [Event SiteEvent] -> Query ()
+foldEvents _ [] = return ()
+foldEvents handler evs = do
+  forM_ evs (handleEvent handler)
+  let seenNr = maximum . map eventNr $ evs
+  markHandeledEventNumber (handlerName handler) seenNr
 
 ----------------------------------------------------------------------
 -- DB Queries
