@@ -5,11 +5,8 @@ module Config
  ) where
 
 import Web.Spock
-
 import Database.Persist.Postgresql(ConnectionString)
-
 import Utils.Password (PasswordHash, readPasswordHashFromFile)
-
 import Data.Text (Text)
 
 data AppConfig

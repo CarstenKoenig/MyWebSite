@@ -14,8 +14,7 @@ import Data.Text (Text)
 import Data.Text.Lazy (fromStrict)
 import Data.Time (UTCTime, getCurrentTime)
 import Models.BlogIndex (indexToId, blogIndexHandler)
-import Models.EventHandlers (executeHandlerQuery)
-import Models.Database
+import qualified Models.Database as DB
 import Models.Events
 import Routes
 import Session
@@ -29,24 +28,22 @@ data BlogPost =
 
 
 insertBlogPost :: Text -> Text -> UTCTime -> SiteAdminAction BlogId
-insertBlogPost title content published = do
-  id <- startEvents (map BlogEntry
+insertBlogPost title content published =
+  startEvents handlers (map BlogEntry
     [ TitleSet title
     , ContentSet (Markdown $ fromStrict content)
     , PublishedAt published
     ])
-  runHandlers
-  return id
 
 
 updateBlogPost :: BlogId -> Text -> Text -> UTCTime -> SiteAdminAction ()
-updateBlogPost id title content published = do
-  addEvents id (map BlogEntry
+updateBlogPost id title content published =
+  addEvents handlers id (map BlogEntry
     [ TitleSet title
     , ContentSet (Markdown $ fromStrict content)
     , PublishedAt published
     ])
-  runHandlers
+
 
 getBlogPostId :: BlogId -> SiteAction ctx (Maybe BlogPost)
 getBlogPostId id = do
@@ -54,7 +51,7 @@ getBlogPostId id = do
   evs <- getEvents (Just id)
   if null evs
     then return Nothing
-    else return . Just $ foldl' update (emptyPost now) evs
+    else return . Just . foldl' update (emptyPost now) $ map event evs
   where
     emptyPost = BlogPost (Markdown "") ""
     update post (BlogEntry (TitleSet t)) = post { title = t }
@@ -64,11 +61,10 @@ getBlogPostId id = do
 
 getBlogPostPath :: Int -> Int -> Text -> SiteAction ctx (Maybe BlogPost)
 getBlogPostPath year month title =
-  runSqlAction (indexToId year month title)
+  DB.runSqlAction (indexToId year month title)
   >>= maybe (return Nothing) getBlogPostId
 
 
-runHandlers :: SiteAdminAction ()
-runHandlers =
-  runSqlAction $ executeHandlerQuery blogIndexHandler
+handlers :: [EventHandler]
+handlers = [blogIndexHandler]
   

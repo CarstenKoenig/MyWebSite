@@ -21,7 +21,7 @@ import qualified Lucid.Html5 as H
 import qualified Models.BlogIndex as Index
 import Models.BlogPost
 import Models.Database (initializePool, runOnPool)
-import Models.EventHandlers
+import Models.Events (forwardEventHandlers)
 import Network.HTTP.Types (urlDecode, notFound404)
 import Network.Wai (Middleware, Application)
 import Network.Wai.Handler.Warp (run)
@@ -43,7 +43,7 @@ main = do
   cfg <- defaultAppConfig
   pool <- initializePool cfg
   spockCfg <- defaultSpockCfg emptySession (PCPool pool) (SiteState cfg)
-  runOnPool pool $ executeHandlerQuery Index.blogIndexHandler
+  runOnPool pool $ forwardEventHandlers Index.blogIndexHandler
   runSpock 8080 (spock spockCfg app)
 
 

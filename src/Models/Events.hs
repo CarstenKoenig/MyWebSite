@@ -1,8 +1,8 @@
-{-# LANGUAGE OverloadedStrings, DeriveGeneric, RankNTypes, GADTs #-}
+{-# LANGUAGE OverloadedStrings, DeriveGeneric, RankNTypes, GADTs, FlexibleContexts #-}
 
 module Models.Events where
 
-import Control.Monad(fail, forM_)
+import Control.Monad(fail, forM_, forM)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (ToJSON(..),FromJSON(..), Value(..), (.:), (.=), object, encode, decodeStrict')
 import Data.ByteString (ByteString)
@@ -57,11 +57,18 @@ instance ToJSON Markdown where
   toJSON (Markdown text) = object [ "markdown" .= text ]
 
 
+data EventHandler =
+  EventHandler
+  { handlerName :: Text
+  , handleEvent :: Event SiteEvent -> Query ()
+  }
+
+
 ----------------------------------------------------------------------
 -- DB Queries
 
-startEvents :: [SiteEvent] -> SiteAdminAction BlogId
-startEvents events = do
+startEvents :: [EventHandler] -> [SiteEvent] -> SiteAdminAction BlogId
+startEvents handlers events = do
   time <- liftIO getCurrentTime
   DB.runSqlAction $ query time
   where
@@ -70,48 +77,82 @@ startEvents events = do
     json = toStrict . encode
     query time = do
       nextId <- next <$> selectList [] [Desc DB.EventAggregateId]
-      forM_ events (\ev -> insert (DB.Event nextId (json ev) time))
+      nrs <- forM events (\ev -> insert (DB.Event nextId (json ev) time))
+      runHandlers $ map (wrap time nextId) (zip nrs events)
       return nextId
+    runHandlers evs =
+      sequence_ [ handleEvent h ev | h <- handlers, ev <- evs ]
+    wrap time nextId (nr, ev) =
+      Event ev (fromSqlKey nr) nextId time
 
 
-addEvents :: BlogId -> [SiteEvent] -> SiteAdminAction ()
-addEvents blogId events = do
+addEvents :: [EventHandler] -> BlogId -> [SiteEvent] -> SiteAdminAction ()
+addEvents handlers blogId events = do
   time <- liftIO getCurrentTime
   DB.runSqlAction $ query time
   where
     json = toStrict . encode
-    query time =
-      forM_ events (\ev -> insert (DB.Event blogId (json ev) time))
+    query time = do
+      nrs <- forM events (\ev -> insert (DB.Event blogId (json ev) time))
+      runHandlers $ map (wrap time) (zip nrs events)
+    runHandlers evs =
+      sequence_ [ handleEvent h ev | h <- handlers, ev <- evs ]
+    wrap time (nr, ev) =
+      Event ev (fromSqlKey nr) blogId time
 
 
-getEvents :: Maybe BlogId -> SiteAction ctx [SiteEvent]
+getEvents :: Maybe BlogId -> SiteAction ctx [Event SiteEvent]
 getEvents ido = do
-  let map = mapMaybe (decodeStrict' . DB.eventJson . entityVal)
   let filter =
         case ido of
           Nothing -> []
           Just id -> [ DB.EventAggregateId ==. id]
-  DB.runSqlAction (map <$> selectList filter [Asc DB.EventId])
+  DB.runSqlAction (mapMaybe mapEvent <$> selectList filter [Asc DB.EventId])
+
+
+loadEventsAfter :: Int64 -> Query (Int64, [Event SiteEvent])
+loadEventsAfter afterNr = do
+  evs <- selectList [DB.EventId >. toSqlKey afterNr]
+                    [Asc DB.EventId]
+  return $ if null evs
+    then (afterNr, [])
+    else (maxNr evs, wrap evs)
+  where
+    maxNr = maximum . map (fromSqlKey . entityKey)
+    wrap = mapMaybe mapEvent
+
+
+lastSeenHandlerEventNumber :: Text -> Query Int64
+lastSeenHandlerEventNumber name =
+  maybe 0 DB.eventHandlerSeenNumber <$> get (DB.EventHandlerKey name)
+
+
+markHandeledEventNumber :: Text -> Int64 -> Query ()
+markHandeledEventNumber name evNr = do
+  now <- liftIO getCurrentTime
+  found <- get (DB.EventHandlerKey name)
+  case found of
+    Nothing ->
+      insertKey (DB.EventHandlerKey name)
+                (DB.EventHandler name evNr Nothing now)
+    Just _ ->
+      update (DB.EventHandlerKey name)
+             [ DB.EventHandlerSeenNumber =. evNr
+             , DB.EventHandlerUpdated =. now ]
+
+----------------------------------------------------------------------
 
 
 iterateOverEvents :: Int64 -> (Event SiteEvent -> Query ())
                   -> Query Int64
 iterateOverEvents lastSeen action = do
-  evs <- selectList [DB.EventId >=. toSqlKey (lastSeen + 1)]
-                    [Asc DB.EventId]
-  let acts = mapMaybe applyEv evs
-  sequence_ acts
-  if null evs
-    then return lastSeen
-    else return . maximum . map (fromSqlKey . entityKey) $ evs
-    
-  where
-    applyEv = fmap action . wrapEvent
+  (seenNr, evs) <- loadEventsAfter lastSeen
+  forM_ evs action
+  return seenNr
 
 
-
-wrapEvent :: FromJSON ev => Entity DB.Event -> Maybe (Event ev)
-wrapEvent row = do
+mapEvent :: FromJSON ev => Entity DB.Event -> Maybe (Event ev)
+mapEvent row = do
   val <- getJson
   return $ Event val nr id added
   where
@@ -120,3 +161,18 @@ wrapEvent row = do
     id = DB.eventAggregateId evVal
     added = DB.eventAdded evVal
     getJson  = decodeStrict' $ DB.eventJson evVal
+
+
+forwardEventHandlers :: EventHandler -> Query ()
+forwardEventHandlers handler = do
+  lastNr <- lastSeenHandlerEventNumber (handlerName handler)
+  seenNr <- iterateOverEvents lastNr (handleEvent handler)
+  markHandeledEventNumber (handlerName handler) seenNr
+
+
+foldEvents :: EventHandler -> [Event SiteEvent] -> Query ()
+foldEvents _ [] = return ()
+foldEvents handler evs = do
+  forM_ evs (handleEvent handler)
+  let seenNr = maximum . map eventNr $ evs
+  markHandeledEventNumber (handlerName handler) seenNr

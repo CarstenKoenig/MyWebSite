@@ -23,7 +23,6 @@ import Database.Persist
 import Database.Persist.Postgresql
 import Models.Database (Query)
 import qualified Models.Database as DB
-import Models.EventHandlers
 import Models.Events
 import Routes
 
