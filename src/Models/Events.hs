@@ -85,16 +85,14 @@ getEvents ido = do
   DB.runSqlAction (map <$> selectList filter [Asc DB.EventId])
 
 
-iterateOverEvents :: Int64 -> (Int64 -> UTCTime -> Int64 -> SiteEvent -> Query ())
+iterateOverEvents :: Int64 -> (Int64 -> SiteEvent -> Query ())
                   -> Query Int64
 iterateOverEvents lastSeen action =
   let
     applyEv ev =
       let evVal = entityVal ev
       in fmap
-           (action (fromSqlKey $ entityKey ev)
-                   (DB.eventAdded evVal)
-                   (DB.eventAggregateId evVal)
+           (action (DB.eventAggregateId evVal)
            ) (decodeStrict' $ DB.eventJson evVal)
   in do
     evs <- selectList [DB.EventId >=. toSqlKey (lastSeen + 1)]

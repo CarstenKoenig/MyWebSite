@@ -29,13 +29,10 @@ import Routes
 
 
 blogIndexHandler :: EventHandler
-blogIndexHandler = EventHandler name handle
+blogIndexHandler = EventHandler name query
   where
     name = "BlogIndex"
     
-    handle evNr _ =
-      query
-      
     query aggId (BlogEntry (TitleSet title)) =
       setBlogIndexTitle aggId (validateTitle title)
     query aggId (BlogEntry (PublishedAt time)) =

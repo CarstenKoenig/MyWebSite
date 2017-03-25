@@ -23,7 +23,7 @@ import Models.Events
 data EventHandler =
   EventHandler
   { handlerName :: Text
-  , handleEvent :: Int64 -> UTCTime -> Int64 -> SiteEvent -> Query ()
+  , handleEvent :: Int64 -> SiteEvent -> Query ()
   }
 
 
