@@ -18,7 +18,6 @@ import GHC.Generics (Generic)
 import Models.Database (Query)
 import qualified Models.Database as DB
 import Routes
-import Session
 import Text.Markdown(Markdown(..))
 
 
