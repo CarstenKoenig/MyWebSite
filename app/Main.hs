@@ -18,8 +18,9 @@ import Database.Persist.Postgresql (SqlBackend, createPostgresqlPool)
 import Layout (Page, renderPage)
 import Lucid (Html)
 import qualified Lucid.Html5 as H
+import qualified Models.BlogIndex as Index
 import Models.BlogPost
-import Models.Database (initializePool)
+import Models.Database (initializePool, runOnPool)
 import Models.EventHandlers
 import Network.HTTP.Types (urlDecode, notFound404)
 import Network.Wai (Middleware, Application)
@@ -42,7 +43,7 @@ main = do
   cfg <- defaultAppConfig
   pool <- initializePool cfg
   spockCfg <- defaultSpockCfg emptySession (PCPool pool) (SiteState cfg)
-  executeHandler pool blogIndexHandler
+  runOnPool pool $ executeHandlerQuery Index.blogIndexHandler
   runSpock 8080 (spock spockCfg app)
 
 

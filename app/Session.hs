@@ -44,7 +44,7 @@ adminLogon :: Maybe RedirectTo -> PasswordHash -> Password -> SiteAction ctx ()
 adminLogon redirectTo hash pwd =
   if Pwd.verifyPassword hash pwd then do
     modifySession $  \ session -> session { logon = Admin }
-    redirect $ redTo
+    redirect redTo
   else do
     modifySession $  \ session -> session { logon = Guest }
     redirect $ renderRoute loginR
