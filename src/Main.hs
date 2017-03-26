@@ -22,6 +22,7 @@ import qualified Lucid.Html5 as H
 import Models.BlogCategory
 import qualified Models.BlogIndex as Index
 import Models.BlogPost
+import Models.BlogIndex (monthView)
 import Models.Events (EventHandler, Category(..), forwardEventHandlers)
 import Network.HTTP.Types (urlDecode, notFound404)
 import Network.Wai (Middleware, Application)
@@ -29,11 +30,12 @@ import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
 import Routes
 import Session
-import Utils.Database (initializePool, runOnPool)
+import Utils.Database (initializePool, runOnPool, runSqlAction)
 import Utils.Password (Password(..), PasswordHash)
 import qualified Utils.Password as Pwd
 import Views.AboutMe
 import Views.BlogPost
+import Views.BlogIndex
 import Views.EditPost
 import Views.Login
 import Web.Routing.Combinators (PathState(..))
@@ -85,6 +87,12 @@ app = prehook baseHook $ do
         Views.BlogPost.page timeZone post
       Nothing ->
         setStatus notFound404
+
+  get showMonthPathR $ \year month -> do
+    monthPosts <- runSqlAction $ monthView year month
+    renderPage (ShowMonth year month) $
+      Views.BlogIndex.monthPage year month monthPosts
+        
 
   get aboutMeR $
     renderPage AboutMe Views.AboutMe.page

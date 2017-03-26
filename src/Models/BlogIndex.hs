@@ -9,22 +9,33 @@
 module Models.BlogIndex
   ( blogIndexHandler
   , indexToId
+  , monthView
   )
 where
 
 import Control.Monad.IO.Class(liftIO)
 import qualified Data.Char as C
 import Data.Int (Int64)
+import Data.List (nub)
 import Data.Pool (Pool)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time (UTCTime, getCurrentTime, toGregorian, utctDay)
 import Database.Persist
 import Database.Persist.Postgresql
+import Models.BlogPost (BlogPost(..))
 import Models.Database (Query)
 import qualified Models.Database as DB
 import Models.Events
 import Routes
+
+
+data BlogIndex =
+  BlogIndex { blogIndexYear :: Int
+            , blogIndexMonth :: Int
+            , blogIndexTitle :: Text
+            , blogIndexPost :: BlogPost
+            } deriving (Show, Eq)
 
 
 blogIndexHandler :: EventHandler
@@ -59,6 +70,25 @@ indexToId :: Int -> Int -> Text -> Query (Maybe BlogId)
 indexToId year month title =
   fmap (DB.blogIndexAggregateId . entityVal) <$> getBy (DB.UniquePath year month title)
 
+
+monthView :: Int -> Int -> Query [(Text, BlogId)]
+monthView year month =
+  fmap (view . entityVal) <$>
+  selectList [DB.BlogIndexYear ==. year, DB.BlogIndexMonth ==. month ]
+             [Desc DB.BlogIndexAggregateId]
+  where
+    view row =
+      (DB.blogIndexTitle row, DB.blogIndexAggregateId row)
+
+
+yearView :: Int -> Query [Int]
+yearView year =
+  nub . fmap (view . entityVal) <$>
+  selectList [DB.BlogIndexYear ==. year ]
+             [Desc DB.BlogIndexMonth]
+  where
+    view = DB.blogIndexMonth
+      
 
 setBlogIndexTitle :: BlogId -> Text -> Query ()
 setBlogIndexTitle blogId title = do

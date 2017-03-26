@@ -34,6 +34,9 @@ showPostIdR = var
 showPostPathR :: Path '[Int,Int,Text] Open
 showPostPathR = var <//> var <//> var
 
+showMonthPathR :: Path '[Int,Int] Open
+showMonthPathR = var <//> var
+
 editPostR :: Path '[BlogId] Open
 editPostR = "edit" <//> var
 
@@ -47,6 +50,7 @@ data Route
   | Login
   | ShowId BlogId
   | ShowPath Int Int Text
+  | ShowMonth Int Int
   | Edit BlogId
   | New
   deriving Eq
@@ -62,6 +66,7 @@ instance Show Route where
   show New = "Neuer Eintrag"
   show (Edit _) = "Eintrag editieren"
   show (ShowId _) = "Eintrag ansehen"
+  show (ShowMonth _ _) = "Monat ansehen"
   show ShowPath {} = "Eintrag ansehen"
 
 
@@ -71,6 +76,7 @@ routeLinkText AboutMe = renderRoute aboutMeR
 routeLinkText Login = renderRoute loginR
 routeLinkText (ShowId id) = renderRoute showPostIdR id
 routeLinkText (ShowPath y m t) = renderRoute showPostPathR y m t
+routeLinkText (ShowMonth y m) = renderRoute showMonthPathR y m
 routeLinkText New = renderRoute newPostR
 routeLinkText (Edit id) = renderRoute editPostR id
 
