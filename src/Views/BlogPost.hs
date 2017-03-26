@@ -17,24 +17,19 @@ import qualified Data.Text.Lazy as TL
 import Data.Time (UTCTime, toGregorian)
 import Data.Time.LocalTime (TimeZone, TimeOfDay (..)
                            , utcToLocalTime, localTimeOfDay, localDay)
+import Layout (Page (Page))
+import Lucid (Html, toHtml, toHtmlRaw)
+import qualified Lucid.Bootstrap as BS
+import qualified Lucid.Html5 as H
+import Models.BlogPost (BlogPost (..))
 import Models.Events
+import Skylighting ( TokenizerConfig(..), SourceLine)
+import qualified Skylighting as Sky       
 import Text.Blaze (preEscapedText, preEscapedToMarkup)
 import qualified Text.Blaze.Html as TBH
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import Text.Markdown (Markdown(..), MarkdownSettings(..), markdown)
 import Text.Printf
-
-
-import Lucid (Html, toHtml, toHtmlRaw)
-import qualified Lucid.Html5 as H
-import qualified Lucid.Bootstrap as BS
-
-import Skylighting ( TokenizerConfig(..), SourceLine)
-import qualified Skylighting as Sky       
-
-
-import Layout (Page (Page))
-import Models.BlogPost (BlogPost (..))
 
 
 page :: TimeZone -> BlogPost -> Page

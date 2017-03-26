@@ -6,6 +6,7 @@ module Models.BlogPost
   , updateBlogPost
   , getBlogPostId
   , getBlogPostPath
+  , queryBlogPost
   ) where
 
 import Control.Monad.IO.Class (liftIO)
@@ -18,6 +19,7 @@ import Data.Time (UTCTime, getCurrentTime)
 import Models.BlogIndex (indexToId, blogIndexHandler)
 import Models.BlogCategory
 import qualified Models.BlogCategory as Cat
+import Models.Database (Query)
 import qualified Models.Database as DB
 import Models.Events
 import Routes
@@ -64,9 +66,13 @@ updateBlogPost id title content published newCategories = do
 
 
 getBlogPostId :: BlogId -> SiteAction ctx (Maybe BlogPost)
-getBlogPostId id = do
+getBlogPostId = runSqlAction . queryBlogPost
+
+
+queryBlogPost :: BlogId -> Query (Maybe BlogPost)
+queryBlogPost id = do
   now <- liftIO getCurrentTime
-  evs <- runSqlAction $ getEvents (Just id)
+  evs <- getEvents (Just id)
   if null evs
     then return Nothing
     else return . Just . foldl' update (emptyPost now) $ map event evs

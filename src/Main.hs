@@ -89,9 +89,9 @@ app = prehook baseHook $ do
         setStatus notFound404
 
   get showMonthPathR $ \year month -> do
-    monthPosts <- runSqlAction $ monthView year month
+    index <- runSqlAction $ monthView year month
     renderPage (ShowMonth year month) $
-      Views.BlogIndex.monthPage year month monthPosts
+      Views.BlogIndex.monthPage timeZone year month index
         
 
   get aboutMeR $

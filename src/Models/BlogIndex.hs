@@ -7,7 +7,8 @@
 
 
 module Models.BlogIndex
-  ( blogIndexHandler
+  ( BlogIndex (..)
+  , blogIndexHandler
   , indexToId
   , monthView
   )
@@ -16,14 +17,14 @@ where
 import Control.Monad.IO.Class(liftIO)
 import qualified Data.Char as C
 import Data.Int (Int64)
-import Data.List (nub)
+import Data.List (nub, foldl')
+import Data.Maybe (catMaybes)
 import Data.Pool (Pool)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time (UTCTime, getCurrentTime, toGregorian, utctDay)
 import Database.Persist
 import Database.Persist.Postgresql
-import Models.BlogPost (BlogPost(..))
 import Models.Database (Query)
 import qualified Models.Database as DB
 import Models.Events
@@ -34,7 +35,8 @@ data BlogIndex =
   BlogIndex { blogIndexYear :: Int
             , blogIndexMonth :: Int
             , blogIndexTitle :: Text
-            , blogIndexPost :: BlogPost
+            , blogIndexCaption :: Text
+            , blogIndexPublished :: UTCTime
             } deriving (Show, Eq)
 
 
@@ -71,14 +73,35 @@ indexToId year month title =
   fmap (DB.blogIndexAggregateId . entityVal) <$> getBy (DB.UniquePath year month title)
 
 
-monthView :: Int -> Int -> Query [(Text, BlogId)]
-monthView year month =
-  fmap (view . entityVal) <$>
-  selectList [DB.BlogIndexYear ==. year, DB.BlogIndexMonth ==. month ]
-             [Desc DB.BlogIndexAggregateId]
+monthView :: Int -> Int -> Query [BlogIndex]
+monthView year month = do
+  rows <- selectList
+          [DB.BlogIndexYear ==. year, DB.BlogIndexMonth ==. month ]
+          [Desc DB.BlogIndexAggregateId]
+  catMaybes <$> mapM (view . entityVal) rows
   where
-    view row =
-      (DB.blogIndexTitle row, DB.blogIndexAggregateId row)
+    view :: DB.BlogIndex -> Query (Maybe BlogIndex)
+    view row = do
+      let title = DB.blogIndexTitle row
+          blogId = DB.blogIndexAggregateId row
+      queryIndexItem year month title blogId
+
+
+queryIndexItem :: Int -> Int -> Text -> BlogId -> Query (Maybe BlogIndex)
+queryIndexItem year month title id = do
+  now <- liftIO getCurrentTime
+  evs <- getEvents (Just id)
+  if null evs
+    then return Nothing
+    else return . Just . foldl' update (emptyInd now) $ map event evs
+  where
+    emptyInd = BlogIndex year month title ""
+    update ind (BlogEntry (TitleSet t)) = ind { blogIndexCaption = t }
+    update ind (BlogEntry (ContentSet _)) = ind
+    update ind (BlogEntry (PublishedAt t)) = ind { blogIndexPublished = t }
+    update ind (BlogEntry (AddedToCategory _)) = ind
+    update ind (BlogEntry (RemovedFromCategory _)) = ind
+      
 
 
 yearView :: Int -> Query [Int]
