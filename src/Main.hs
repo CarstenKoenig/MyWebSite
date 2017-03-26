@@ -10,6 +10,7 @@ import Data.IORef
 import Data.Maybe (fromMaybe, fromJust)
 import Data.Monoid
 import qualified Data.Text as T
+import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as TL
 import Data.Time ( getCurrentTime )
@@ -107,8 +108,9 @@ app = prehook baseHook $ do
     post newPostR $ do
       title <- fromJust <$> param "title"
       content <- fromJust <$> param "content"
+      cats <- splitKomma . fromMaybe "" <$> param "categories"
       now <- liftIO getCurrentTime
-      id <- insertBlogPost title content now []
+      id <- insertBlogPost title content now cats
       redirect (routeLinkText $ ShowId id)
       
 
@@ -118,10 +120,18 @@ app = prehook baseHook $ do
     post editPostR $ \id -> do
       title <- fromJust <$> param "title"
       content <- fromJust <$> param "content"
+      cats <- splitKomma . fromMaybe "" <$> param "categories"
       now <- liftIO getCurrentTime
-      updateBlogPost id title content now
+      updateBlogPost id title content now cats
       redirect (routeLinkText $ ShowId id)
     
+
+
+splitKomma :: Text -> [Category]
+splitKomma = map Category . filter (not . T.null) . fmap T.strip . T.split isSep
+  where isSep ',' = True
+        isSep ';' = True
+        isSep _   = False
 
 
 example :: IO BlogPost
