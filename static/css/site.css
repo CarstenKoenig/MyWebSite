@@ -141,6 +141,11 @@ h6, .h6 {
   color: #999;
 }
 
+.blog-post-meta .label {
+  margin-right:3px;
+}
+
+
 
 /* Sidebar modules for boxing content */
 .sidebar-module {
