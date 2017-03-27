@@ -23,6 +23,7 @@ executable WebSite
                      , Models.BlogPost
                      , Models.Database
                      , Models.Events
+                     , Models.Projections
                      , Routes
                      , Routes
                      , Session
