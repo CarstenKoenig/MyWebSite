@@ -4,13 +4,14 @@ module Models.Events where
 
 import Control.Monad(fail, forM_, forM)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.Writer.Lazy (WriterT, runWriterT, tell)
 import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Writer.Lazy (WriterT, runWriterT, tell)
 import Data.Aeson (ToJSON(..),FromJSON(..), Value(..), (.:), (.=), object, encode, decodeStrict')
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (toStrict)
 import Data.Int (Int64)
-import Data.Maybe (mapMaybe)
+import Data.List (foldl', (\\))
+import Data.Maybe (mapMaybe, fromMaybe)
 import Data.Pool (Pool)
 import Data.Text(Text)
 import Data.Time(UTCTime, getCurrentTime)
@@ -19,6 +20,7 @@ import Database.Persist.Postgresql (SqlBackend, toSqlKey, fromSqlKey)
 import GHC.Generics (Generic)
 import Models.Database (Query)
 import qualified Models.Database as DB
+import Models.Projections
 import Routes
 import Text.Markdown(Markdown(..))
 
@@ -80,6 +82,44 @@ data EventHandler =
 type EventQuery =
   WriterT [Event SiteEvent] Query
 
+----------------------------------------------------------------------
+-- Projections
+
+fromSite :: SiteEvent -> Maybe BlogEntryEvent
+fromSite (BlogEntry ev) = Just ev
+
+
+contentP =
+  fromMaybe (Markdown "") <$> lastP contSet
+  where
+    contSet (ContentSet c) = Just c
+    contSet _ = Nothing
+
+titleP =    
+  fromMaybe "" <$> lastP titleSet
+  where
+    titleSet (TitleSet t) = Just t
+    titleSet _ = Nothing
+
+publishedAtP now =
+  fromMaybe now <$> lastP publAt
+  where
+    publAt (PublishedAt t) = Just t
+    publAt _ = Nothing
+
+
+categoriesP =
+  (\\) <<* addP <<$ remP
+  where
+    addP = collectP catAdd
+    catAdd (AddedToCategory c) = Just c
+    catAdd _ = Nothing
+    remP = collectP catRem
+    catRem (RemovedFromCategory c) = Just c
+    catRem _ = Nothing
+
+
+----------------------------------------------------------------------
 
 toHandlerQuery :: [EventHandler] -> EventQuery a -> Query a
 toHandlerQuery handlers eq = do
@@ -130,6 +170,20 @@ getEvents ido = do
           Nothing -> []
           Just id -> [ DB.EventAggregateId ==. id]
   mapMaybe mapEvent <$> selectList filter [Asc DB.EventId]
+
+
+getMaybeProjection :: Projection SiteEvent state result -> BlogId -> Query (Maybe result)
+getMaybeProjection p id = do
+  evs <- map event <$> getEvents (Just id)
+  case evs of
+    [] -> return Nothing
+    _  -> return . Just $ getResult p evs
+
+
+getProjection :: Projection SiteEvent state result -> BlogId -> Query result
+getProjection p id = do
+  evs <- map event <$> getEvents (Just id)
+  return $ getResult p evs
 
 
 loadEventsAfter :: Int64 -> Query (Int64, [Event SiteEvent])
