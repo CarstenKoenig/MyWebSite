@@ -28,6 +28,7 @@ import Database.Persist.Postgresql
 import Models.Database (Query)
 import qualified Models.Database as DB
 import Models.Events
+import Models.Projections
 import Routes
 
 
@@ -90,19 +91,12 @@ monthView year month = do
 queryIndexItem :: Int -> Int -> Text -> BlogId -> Query (Maybe BlogIndex)
 queryIndexItem year month title id = do
   now <- liftIO getCurrentTime
-  evs <- getEvents (Just id)
-  if null evs
-    then return Nothing
-    else return . Just . foldl' update (emptyInd now) $ map event evs
-  where
-    emptyInd = BlogIndex year month title ""
-    update ind (BlogEntry (TitleSet t)) = ind { blogIndexCaption = t }
-    update ind (BlogEntry (ContentSet _)) = ind
-    update ind (BlogEntry (PublishedAt t)) = ind { blogIndexPublished = t }
-    update ind (BlogEntry (AddedToCategory _)) = ind
-    update ind (BlogEntry (RemovedFromCategory _)) = ind
-      
+  getMaybeProjection (liftP fromSite $ blogIndexP year month title now) id
 
+
+blogIndexP year month title now =
+  BlogIndex year month title <<* titleP <<$ publishedAtP now
+    
 
 yearView :: Int -> Query [Int]
 yearView year =
