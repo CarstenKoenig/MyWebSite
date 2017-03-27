@@ -6,6 +6,7 @@ import Data.Int (Int64)
 import Data.Monoid
 import Data.Text (Text)
 import qualified Data.Text as T
+import Network.HTTP.Types.Status (Status)
 import Network.Wai (pathInfo)
 import Web.Routing.Combinators (PathState(..))
 import Web.Spock
@@ -18,6 +19,9 @@ newtype RedirectTo = RedirectTo Text
 
 aboutMeR :: Path '[] Open
 aboutMeR = "aboutMe"
+
+errorR :: Path '[] Open
+errorR = "error"
 
 logoutR :: Path '[] Open
 logoutR = "logout"
@@ -52,6 +56,7 @@ data Route
   | ShowPath Int Int Text
   | ShowMonth Int Int
   | Edit BlogId
+  | Error Status
   | New
   deriving Eq
 
@@ -67,6 +72,7 @@ instance Show Route where
   show (Edit _) = "Eintrag editieren"
   show (ShowId _) = "Eintrag ansehen"
   show (ShowMonth _ _) = "Monat ansehen"
+  show (Error _) = "Fehler"
   show ShowPath {} = "Eintrag ansehen"
 
 
@@ -79,4 +85,4 @@ routeLinkText (ShowPath y m t) = renderRoute showPostPathR y m t
 routeLinkText (ShowMonth y m) = renderRoute showMonthPathR y m
 routeLinkText New = renderRoute newPostR
 routeLinkText (Edit id) = renderRoute editPostR id
-
+routeLinkText (Error _) = renderRoute errorR

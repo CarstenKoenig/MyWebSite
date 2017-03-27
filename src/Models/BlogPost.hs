@@ -9,6 +9,7 @@ module Models.BlogPost
   ) where
 
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans (lift)
 import Data.Int (Int64)
 import Data.List (foldl', (\\))
 import Data.Maybe (fromMaybe)
@@ -36,8 +37,10 @@ data BlogPost =
            }
 
 
-insertBlogPost :: Text -> Text -> UTCTime -> [Category] -> SiteAdminAction BlogId
-insertBlogPost title content published categories = runEventAction query
+insertBlogPost :: Text -> Text -> UTCTime -> [Category]
+               -> SiteAdminAction (SqlResult BlogId)
+insertBlogPost title content published categories =
+  runEventAction query
   where
     query = do
       blogId <- newFromEvents (map BlogEntry
@@ -50,35 +53,46 @@ insertBlogPost title content published categories = runEventAction query
       return blogId
 
 
-updateBlogPost :: BlogId -> Text -> Text -> UTCTime -> [Category] -> SiteAdminAction ()
-updateBlogPost id title content published newCategories = do
-  oldPost <- getBlogPostId id
-  let (added, removed) = diffs (maybe [] categories oldPost) newCategories
-  runEventAction $
-    appendEvents id (map BlogEntry
-                      ([ TitleSet title
-                       , ContentSet (Markdown $ fromStrict content)
-                       , PublishedAt published
-                       ]
-                       ++ map AddedToCategory added
-                       ++ map RemovedFromCategory removed
-                      ))
+updateBlogPost :: BlogId -> Text -> Text -> UTCTime -> [Category]
+               -> SiteAdminAction (SqlResult ())
+updateBlogPost id title content published newCategories =
+  runEventAction query
+  where
+    query = do
+      oldPost <- lift $ queryBlogPostId id
+      let (added, removed) = diffs (maybe [] categories oldPost) newCategories
+      appendEvents id (map BlogEntry
+                       ([ TitleSet title
+                        , ContentSet (Markdown $ fromStrict content)
+                        , PublishedAt published
+                        ]
+                        ++ map AddedToCategory added
+                        ++ map RemovedFromCategory removed
+                       ))
 
 
-getBlogPostId :: BlogId -> SiteAction ctx (Maybe BlogPost)
-getBlogPostId id = do
+getBlogPostId :: BlogId -> SiteAction ctx (SqlResult (Maybe BlogPost))
+getBlogPostId = runSqlAction . queryBlogPostId
+
+
+queryBlogPostId :: BlogId -> Query (Maybe BlogPost)
+queryBlogPostId id = do
   now <- liftIO getCurrentTime
-  runSqlAction $ getMaybeProjection (liftP fromSite $ blogPostP now) id
+  getMaybeProjection (liftP fromSite $ blogPostP now) id
 
 
 blogPostP now =
   BlogPost <<* contentP <<$ titleP <<$ publishedAtP now <<$ categoriesP
 
 
-getBlogPostPath :: Int -> Int -> Text -> SiteAction ctx (Maybe BlogPost)
+getBlogPostPath :: Int -> Int -> Text
+                -> SiteAction ctx (SqlResult (Maybe BlogPost))
 getBlogPostPath year month title =
-  runSqlAction (indexToId year month title)
-  >>= maybe (return Nothing) getBlogPostId
+  runSqlAction query
+  where
+    query =
+      indexToId year month title
+      >>= maybe (return Nothing) queryBlogPostId
 
 
 diffs :: Eq a => [a] -> [a] -> ([a],[a])

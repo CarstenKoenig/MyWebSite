@@ -7,21 +7,26 @@
 
 module Utils.Database where
 
-import           Web.Spock hiding (get)
 import           Config
+import           Control.Monad.Catch (MonadCatch, catch)
 import           Control.Monad.Logger (NoLoggingT, runNoLoggingT)
 import           Data.Pool (Pool)
 import           Database.Persist
 import           Database.Persist.Postgresql
 import           Database.Persist.TH
+import           Database.PostgreSQL.Simple (SqlError(..))
 import           Models.Database
+import           Models.Events
 import           Routes
 import           Session
 import           Text.Markdown (Markdown(..))
-import           Models.Events
+import           Web.Spock hiding (get)
 
 ----------------------------------------------------------------------
 -- SQL execution
+
+type SqlResult a = Either SqlError a
+
 
 initializePool :: AppConfig -> IO (Pool SqlBackend)
 initializePool cfg = do
@@ -33,16 +38,20 @@ initializePool cfg = do
 runEventAction :: (Monad m, HasSpock m
                   , SpockConn m ~ SqlBackend
                   , SpockState m ~ SiteState)
-               => EventQuery a -> m a
+               => EventQuery a -> m (SqlResult a)
 runEventAction query = do
   hds <- handlers . appConfig <$> getState
   runSqlAction (toHandlerQuery hds query)
 
 
 runSqlAction :: (HasSpock m, SpockConn m ~ SqlBackend)
-       => Query a -> m a
+       => Query a -> m (SqlResult a)
 runSqlAction action =
-  runQuery (runSqlConn action)
+  runQuery runSql
+  where
+    runSql backend =
+      catch (Right <$> runSqlConn action backend)
+            (return . Left)
 {-# INLINE runSqlAction #-}
 
 

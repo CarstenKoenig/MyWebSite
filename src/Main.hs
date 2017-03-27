@@ -9,8 +9,8 @@ import Data.HVect (HVect(..))
 import Data.IORef
 import Data.Maybe (fromMaybe, fromJust)
 import Data.Monoid
-import qualified Data.Text as T
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as TL
 import Data.Time ( getCurrentTime )
@@ -20,11 +20,11 @@ import Layout (Page, renderPage)
 import Lucid (Html)
 import qualified Lucid.Html5 as H
 import Models.BlogCategory
+import Models.BlogIndex (monthView)
 import qualified Models.BlogIndex as Index
 import Models.BlogPost
-import Models.BlogIndex (monthView)
 import Models.Events (EventHandler, Category(..), forwardEventHandlers)
-import Network.HTTP.Types (urlDecode, notFound404)
+import Network.HTTP.Types (urlDecode, notFound404, internalServerError500 )
 import Network.Wai (Middleware, Application)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
@@ -34,21 +34,38 @@ import Utils.Database (initializePool, runOnPool, runSqlAction)
 import Utils.Password (Password(..), PasswordHash)
 import qualified Utils.Password as Pwd
 import Views.AboutMe
-import Views.BlogPost
 import Views.BlogIndex
+import Views.BlogPost
 import Views.EditPost
+import Views.Error
 import Views.Login
 import Web.Routing.Combinators (PathState(..))
 import Web.Spock
 import Web.Spock.Config
+import Control.Monad.Catch (catch)
+import Database.PostgreSQL.Simple (SqlError(..))
+
 
 main :: IO ()
 main = do
   cfg <- defaultAppConfig eventHandlers
   pool <- initializePool cfg
-  spockCfg <- defaultSpockCfg emptySession (PCPool pool) (SiteState cfg)
+  spockCfg <- config cfg pool
   runOnPool pool $ forwardEventHandlers Index.blogIndexHandler
   runSpock 8080 (spock spockCfg app)
+
+
+config cfg pool = do
+  spockCfg <- defaultSpockCfg emptySession (PCPool pool) (SiteState cfg)
+  return spockCfg { spc_sessionCfg = sessionCfg (spc_sessionCfg spockCfg)
+                  , spc_errorHandler = viewErrorPage
+                  }
+  where
+    sessionCfg sc = sc { sc_cookieName = "Carsten-Koenig-Cookie" }
+
+
+viewErrorPage st =
+  renderPage (Error st) $ Views.Error.page st
 
 
 eventHandlers :: [EventHandler]
@@ -75,23 +92,31 @@ app = prehook baseHook $ do
   get showPostIdR $ \id -> do
     findPost <- getBlogPostId id
     case findPost of
-      Just post -> renderPage (ShowId id) $
+      Right (Just post) -> renderPage (ShowId id) $
         Views.BlogPost.page timeZone post
-      Nothing ->
-        setStatus notFound404
+      Right Nothing ->
+        viewErrorPage notFound404
+      Left _ ->
+        viewErrorPage internalServerError500
 
   get showPostPathR $ \year month title -> do
     findPost <- getBlogPostPath year month title
     case findPost of
-      Just post -> renderPage (ShowPath year month title) $
+      Right (Just post) -> renderPage (ShowPath year month title) $
         Views.BlogPost.page timeZone post
-      Nothing ->
-        setStatus notFound404
+      Right Nothing ->
+        viewErrorPage notFound404
+      Left _ ->
+        viewErrorPage internalServerError500
 
   get showMonthPathR $ \year month -> do
     index <- runSqlAction $ monthView year month
-    renderPage (ShowMonth year month) $
-      Views.BlogIndex.monthPage timeZone year month index
+    case index of
+      Right index ->
+        renderPage (ShowMonth year month) $
+        Views.BlogIndex.monthPage timeZone year month index
+      Left _ ->
+        viewErrorPage internalServerError500
         
 
   get aboutMeR $
@@ -113,18 +138,29 @@ app = prehook baseHook $ do
 
     get newPostR $ renderPage New $
       Views.EditPost.page Nothing Nothing
+      
     post newPostR $ do
       title <- fromJust <$> param "title"
       content <- fromJust <$> param "content"
       cats <- splitKomma . fromMaybe "" <$> param "categories"
       now <- liftIO getCurrentTime
       id <- insertBlogPost title content now cats
-      redirect (routeLinkText $ ShowId id)
+      case id of
+        Right id ->
+          redirect (routeLinkText $ ShowId id)
+        Left _ ->
+          viewErrorPage internalServerError500
+        
       
 
     get editPostR $ \id -> do
       findPost <- getBlogPostId id
-      renderPage (Edit id) $ Views.EditPost.page (Just id) findPost
+      case findPost of
+        Right findPost ->
+          renderPage (Edit id) $ Views.EditPost.page (Just id) findPost
+        Left _ ->
+          viewErrorPage internalServerError500
+          
     post editPostR $ \id -> do
       title <- fromJust <$> param "title"
       content <- fromJust <$> param "content"
