@@ -23,6 +23,9 @@ executable WebSite
                      , Models.BlogPost
                      , Models.Database
                      , Models.Events
+                     , Models.Events.Types
+                     , Models.Events.Projections
+                     , Models.Events.Database
                      , Models.Projections
                      , Routes
                      , Routes
