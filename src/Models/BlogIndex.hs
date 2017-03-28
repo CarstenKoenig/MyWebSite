@@ -95,7 +95,7 @@ queryIndexItem year month title id = do
 
 
 blogIndexP year month title now =
-  BlogIndex year month title <<* titleP <<$ publishedAtP now
+  BlogIndex year month title <$> titleP <*> publishedAtP now
     
 
 yearView :: Int -> Query [Int]

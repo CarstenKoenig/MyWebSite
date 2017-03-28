@@ -82,7 +82,7 @@ queryBlogPostId id = do
 
 
 blogPostP now =
-  BlogPost <<* contentP <<$ titleP <<$ publishedAtP now <<$ categoriesP
+  BlogPost <$> contentP <*> titleP <*> publishedAtP now <*> categoriesP
 
 
 getBlogPostPath :: Int -> Int -> Text
