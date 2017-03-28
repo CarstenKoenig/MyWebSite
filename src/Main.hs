@@ -53,7 +53,7 @@ main = do
   spockCfg <- config cfg pool
   runOnPool pool $ forwardEventHandlers Index.blogIndexHandler
   runSpock 8080 (spock spockCfg app)
-
+  
 
 config cfg pool = do
   spockCfg <- defaultSpockCfg emptySession (PCPool pool) (SiteState cfg)

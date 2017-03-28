@@ -22,13 +22,16 @@ page status = Page Nothing "Something went wrong..." $ content status
 
 content :: Status -> Html ()
 content status =
-  H.div_ [ H.id_ "error"] $
+  H.div_ [ H.id_ "error"] $ do
     BS.row_ $ do
       col_ 2 ""
       col_ 8 $ do
         H.h2_ [] "Something went wrong..."
-        H.span_ [] (toHtml $ statusMessage status)
+        H.p_ [] (toHtml $ statusMessage status)
       col_ 2 ""
+    BS.row_ $
+        H.img_ [ H.src_ "images/fail.png", H.alt_ "Carsten König" ]
+
     
 
 col_ :: Int -> Html a -> Html a
