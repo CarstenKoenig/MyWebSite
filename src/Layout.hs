@@ -85,7 +85,7 @@ layout route page = do
         H.script_ [ H.src_ "/js/bootstrap.min.js" ] T.empty
         -- MathJax
         H.script_
-          [ H.src_ "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML" ]
+          [ H.src_ "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML" ]
           T.empty
 
 
